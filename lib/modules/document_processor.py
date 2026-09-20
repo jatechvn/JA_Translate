@@ -534,9 +534,16 @@ def main():
             _cache_path = args.cache
         load_cache()
         
-        api_key = config.get('NVIDIA', 'api_key')
-        api_url = config.get('NVIDIA', 'api_base', fallback='https://integrate.api.nvidia.com/v1')
-        model = config.get('NVIDIA', 'model', fallback='google/gemma-4-31b-it')
+        active_provider = config.get('SETTINGS', 'active_provider', fallback='cloud').lower()
+        if active_provider in ('local', 'local_ai'):
+            api_key = ''
+            llama_port = config.get('LOCAL_AI', 'llama_port', fallback='8080')
+            api_url = config.get('LOCAL_AI', 'endpoint', fallback=f'http://127.0.0.1:{llama_port}/v1').rstrip('/')
+            model = config.get('LOCAL_AI', 'gguf_model', fallback='qwen2.5-1.5b-instruct-q4_k_m.gguf')
+        else:
+            api_key = config.get('NVIDIA', 'api_key')
+            api_url = config.get('NVIDIA', 'api_base', fallback='https://integrate.api.nvidia.com/v1')
+            model = config.get('NVIDIA', 'model', fallback='google/gemma-4-31b-it')
         
         proxy = {
             'enabled': config.get('PROXY', 'enabled', fallback='false').lower(),

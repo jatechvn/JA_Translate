@@ -2,9 +2,13 @@
                        PROJECT INFORMATION CARD
 ========================================================================
 Project Name : JA_Translate
-Tech Stack   : Flutter 3.x / Dart 3.x
+Version      : 1.1.0+2
+Tech Stack   : Flutter 3.x / Dart 3.x (Windows Desktop x64)
 Managed By   : JA Auto Git
 Website      : https://jatechvn.github.io/
+Repository   : https://github.com/jatechvn/JA_Translate
 ------------------------------------------------------------------------
-Description  : A premium translation and Pinyin desktop application built with Flutter.
+Description  : A premium translation, offline local AI (llama-server + Qwen 2.5),
+               smart multi-tier OCR screen snipping, and Pinyin desktop
+               application built with Flutter & JA-Tech design system.
 ========================================================================

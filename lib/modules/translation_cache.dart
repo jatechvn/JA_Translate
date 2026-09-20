@@ -53,11 +53,12 @@ class TranslationCache {
   }
 
   /// Write a new translation to the cache on disk
-  static Future<void> set(String text, String srcLang, String tgtLang, String translated) async {
+  static Future<void> set(
+      String text, String srcLang, String tgtLang, String translated) async {
     if (_cachePath == null) initialize();
     final key = '$srcLang->$tgtLang:$text';
     _cache[key] = translated;
-    
+
     try {
       final file = File(_cachePath!);
       await file.writeAsString(jsonEncode(_cache), encoding: utf8);

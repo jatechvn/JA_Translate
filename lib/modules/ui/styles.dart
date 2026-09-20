@@ -20,17 +20,23 @@ enum AppThemeMode { light, dark, auto }
 extension AppThemeModeExt on AppThemeMode {
   String get code {
     switch (this) {
-      case AppThemeMode.light: return 'light';
-      case AppThemeMode.dark:  return 'dark';
-      case AppThemeMode.auto:  return 'auto';
+      case AppThemeMode.light:
+        return 'light';
+      case AppThemeMode.dark:
+        return 'dark';
+      case AppThemeMode.auto:
+        return 'auto';
     }
   }
 
   static AppThemeMode fromCode(String code) {
     switch (code) {
-      case 'light': return AppThemeMode.light;
-      case 'auto':  return AppThemeMode.auto;
-      default:      return AppThemeMode.dark;
+      case 'light':
+        return AppThemeMode.light;
+      case 'auto':
+        return AppThemeMode.auto;
+      default:
+        return AppThemeMode.dark;
     }
   }
 }
@@ -144,7 +150,8 @@ class ThemeNotifier extends ChangeNotifier {
   AppThemeMode _mode;
   late AppColors _colors;
 
-  ThemeNotifier(AppThemeMode initialMode, Brightness platformBrightness) : _mode = initialMode {
+  ThemeNotifier(AppThemeMode initialMode, Brightness platformBrightness)
+      : _mode = initialMode {
     _updateColors(platformBrightness);
   }
 
@@ -167,10 +174,12 @@ class ThemeNotifier extends ChangeNotifier {
             : AppColors.light;
         break;
     }
-    _colors = AppConfig.enableTransparency ? baseColors : baseColors.getOpaqueCopy();
+    _colors =
+        AppConfig.enableTransparency ? baseColors : baseColors.getOpaqueCopy();
     windowManager.setBrightness(baseColors.brightness).catchError((_) {});
     const MethodChannel('ja_translate/theme')
-        .invokeMethod('setTheme', baseColors.brightness == Brightness.dark ? 'dark' : 'light')
+        .invokeMethod('setTheme',
+            baseColors.brightness == Brightness.dark ? 'dark' : 'light')
         .catchError((_) {});
   }
 
@@ -231,8 +240,12 @@ ThemeData buildThemeData(AppColors c) {
       secondary: c.statusActive,
       surface: c.bgSecondary,
       error: c.statusRemoved,
-      onPrimary: c.brightness == Brightness.dark ? const Color(0xFF121212) : Colors.white,
-      onSecondary: c.brightness == Brightness.dark ? const Color(0xFF121212) : Colors.white,
+      onPrimary: c.brightness == Brightness.dark
+          ? const Color(0xFF121212)
+          : Colors.white,
+      onSecondary: c.brightness == Brightness.dark
+          ? const Color(0xFF121212)
+          : Colors.white,
       onSurface: c.textPrimary,
       onError: c.textPrimary,
     ),
@@ -259,7 +272,9 @@ ThemeData buildThemeData(AppColors c) {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: c.linkAccent,
-        foregroundColor: c.brightness == Brightness.dark ? const Color(0xFF121212) : Colors.white,
+        foregroundColor: c.brightness == Brightness.dark
+            ? const Color(0xFF121212)
+            : Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
@@ -338,6 +353,82 @@ ThemeData buildThemeData(AppColors c) {
       color: c.borderDefault,
       thickness: 1,
     ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: c.brightness == Brightness.dark
+          ? const Color(0xF51E293B)
+          : const Color(0xF8FFFFFF),
+      surfaceTintColor: Colors.transparent,
+      elevation: 16,
+      shadowColor: Colors.black
+          .withOpacity(c.brightness == Brightness.dark ? 0.45 : 0.16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: c.brightness == Brightness.dark
+              ? const Color(0x38FFFFFF)
+              : const Color(0x29000000),
+          width: 1.1,
+        ),
+      ),
+      textStyle: TextStyle(
+        fontFamily: 'Segoe UI',
+        fontSize: 12.5,
+        fontWeight: FontWeight.w500,
+        color: c.textPrimary,
+      ),
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          c.brightness == Brightness.dark
+              ? const Color(0xF51E293B)
+              : const Color(0xF8FFFFFF),
+        ),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(16),
+        shadowColor: WidgetStatePropertyAll(
+          Colors.black
+              .withOpacity(c.brightness == Brightness.dark ? 0.45 : 0.16),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: c.brightness == Brightness.dark
+                  ? const Color(0x38FFFFFF)
+                  : const Color(0x29000000),
+              width: 1.1,
+            ),
+          ),
+        ),
+      ),
+    ),
+    menuTheme: MenuThemeData(
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          c.brightness == Brightness.dark
+              ? const Color(0xF51E293B)
+              : const Color(0xF8FFFFFF),
+        ),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(16),
+        shadowColor: WidgetStatePropertyAll(
+          Colors.black
+              .withOpacity(c.brightness == Brightness.dark ? 0.45 : 0.16),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: c.brightness == Brightness.dark
+                  ? const Color(0x38FFFFFF)
+                  : const Color(0x29000000),
+              width: 1.1,
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -368,7 +459,8 @@ class StyledWidgets {
   }
 
   /// Section header
-  static Widget sectionHeader(String title, AppColors c, {IconData? icon, Color? textColor}) {
+  static Widget sectionHeader(String title, AppColors c,
+      {IconData? icon, Color? textColor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -420,7 +512,8 @@ class ThemeReveal extends StatefulWidget {
   State<ThemeReveal> createState() => ThemeRevealState();
 }
 
-class ThemeRevealState extends State<ThemeReveal> with SingleTickerProviderStateMixin {
+class ThemeRevealState extends State<ThemeReveal>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   ui.Image? _oldImage;
   Offset _center = Offset.zero;
@@ -460,22 +553,26 @@ class ThemeRevealState extends State<ThemeReveal> with SingleTickerProviderState
     }
 
     try {
-      final RenderBox? buttonBox = buttonKey.currentContext?.findRenderObject() as RenderBox?;
-      final RenderBox? revealBox = _repaintKey.currentContext?.findRenderObject() as RenderBox?;
-      
+      final RenderBox? buttonBox =
+          buttonKey.currentContext?.findRenderObject() as RenderBox?;
+      final RenderBox? revealBox =
+          _repaintKey.currentContext?.findRenderObject() as RenderBox?;
+
       if (buttonBox != null && revealBox != null) {
-        final buttonCenterGlobal = buttonBox.localToGlobal(Offset(buttonBox.size.width / 2, buttonBox.size.height / 2));
+        final buttonCenterGlobal = buttonBox.localToGlobal(
+            Offset(buttonBox.size.width / 2, buttonBox.size.height / 2));
         _center = revealBox.globalToLocal(buttonCenterGlobal);
       } else {
         _center = Offset.zero;
       }
 
-      final boundary = _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = _repaintKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
       if (boundary != null) {
         final image = await boundary.toImage(
           pixelRatio: MediaQuery.of(context).devicePixelRatio,
         );
-        
+
         setState(() {
           _oldImage = image;
         });
@@ -581,14 +678,18 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.appColors;
     final isTransparent = AppConfig.enableTransparency;
-    
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: backgroundColor ?? (isTransparent ? c.bgCard.withOpacity(0.4) : c.bgCard),
+        color: backgroundColor ??
+            (isTransparent ? c.bgCard.withOpacity(0.4) : c.bgCard),
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: borderColor ?? (isTransparent ? c.borderDefault.withOpacity(0.12) : c.borderDefault),
+          color: borderColor ??
+              (isTransparent
+                  ? c.borderDefault.withOpacity(0.12)
+                  : c.borderDefault),
           width: 1.0,
         ),
         boxShadow: [
@@ -625,7 +726,8 @@ class BlinkingDot extends StatefulWidget {
   State<BlinkingDot> createState() => _BlinkingDotState();
 }
 
-class _BlinkingDotState extends State<BlinkingDot> with SingleTickerProviderStateMixin {
+class _BlinkingDotState extends State<BlinkingDot>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override

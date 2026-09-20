@@ -75,7 +75,8 @@ void main() async {
   }
 
   // Restore saved theme
-  final savedThemeStr = AppConfig.get('SETTINGS', 'theme', defaultValue: 'dark');
+  final savedThemeStr =
+      AppConfig.get('SETTINGS', 'theme', defaultValue: 'dark');
   final savedThemeMode = AppThemeModeExt.fromCode(savedThemeStr);
 
   runApp(JaTranslateApp(
@@ -101,7 +102,8 @@ class _JaTranslateAppState extends State<JaTranslateApp> {
   @override
   void initState() {
     super.initState();
-    final platformBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
     _themeNotifier = ThemeNotifier(widget.initialThemeMode, platformBrightness);
   }
 

@@ -56,17 +56,32 @@ config.json
 translation_cache.json
 translation_history.json
 
+# AI Models & Large Binaries (Never commit heavy weights to git)
+models/
+*.gguf
+*.bin
+*.onnx
+
 # Build output / packaged releases (contains a duplicate copy of config.ini
 # with the same API key baked in - must never be committed)
-/dist/
+dist/
+dist_pack/
+backup/
 dist.7z
 dist.rar
 dist.zip
 *.7z
 *.rar
+*.zip
 
-# Windows Flutter ephemeral
+# Scratch and test files
+scratch/
+scratch_test_vietnamese.pdf
+*.pdf
+
+# Platform Flutter ephemeral
 windows/flutter/ephemeral/
+linux/flutter/ephemeral/
 
 # Generated Dart code
 *.g.dart

@@ -36,14 +36,15 @@ class DocumentTranslator {
       throw Exception('File not found');
     }
     final ext = filePath.split('.').last.toLowerCase();
-    
+
     if (ext == 'txt' || ext == 'md') {
       final text = file.readAsStringSync(encoding: utf8);
       final charCount = text.length;
-      final wordCount = text.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).length;
+      final wordCount =
+          text.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).length;
       return DocumentFileStats(charCount: charCount, wordCount: wordCount);
     }
-    
+
     // Resolve modules directory
     String modulesDir = 'lib/modules';
     if (!Directory(modulesDir).existsSync()) {
@@ -62,7 +63,8 @@ class DocumentTranslator {
         for (final entity in dir.listSync()) {
           if (entity is File) {
             final name = entity.path.split(Platform.pathSeparator).last;
-            if (name.startsWith('document_processor') && name.endsWith('.pyd')) {
+            if (name.startsWith('document_processor') &&
+                name.endsWith('.pyd')) {
               hasPyd = true;
               break;
             }
@@ -77,7 +79,7 @@ class DocumentTranslator {
       hasPyd: hasPyd,
       additionalArgs: ['--input', filePath, '--src', 'stats', '--tgt', 'stats'],
     );
-    
+
     try {
       final result = await Process.run(pythonExe, pythonArgs);
       if (result.exitCode == 0) {
@@ -95,10 +97,9 @@ class DocumentTranslator {
         }
       }
     } catch (_) {}
-    
+
     return DocumentFileStats(charCount: 0, wordCount: 0);
   }
-
 
   /// Splits text into paragraphs and aggregates them into chunks not exceeding maxCharacters
   static List<String> _splitIntoChunks(String text, int maxCharacters) {
@@ -112,7 +113,7 @@ class DocumentTranslator {
           chunks.add(currentChunk.toString());
           currentChunk.clear();
         }
-        
+
         if (paragraph.length > maxCharacters) {
           var remaining = paragraph;
           while (remaining.length > maxCharacters) {
@@ -130,11 +131,11 @@ class DocumentTranslator {
         currentChunk.write(paragraph);
       }
     }
-    
+
     if (currentChunk.isNotEmpty) {
       chunks.add(currentChunk.toString());
     }
-    
+
     return chunks;
   }
 
@@ -147,7 +148,7 @@ class DocumentTranslator {
     int maxChunkCharacters = 4500,
   }) async* {
     final ext = filePath.split('.').last.toLowerCase();
-    
+
     if (ext == 'pdf' || ext == 'xlsx' || ext == 'pptx' || ext == 'docx') {
       yield* _translateViaPython(
         filePath: filePath,
@@ -174,7 +175,8 @@ class DocumentTranslator {
       if (ext == 'txt' || ext == 'md') {
         originalText = file.readAsStringSync(encoding: utf8);
       } else {
-        throw Exception('Unsupported file type: .$ext. Only .txt, .md, .docx, .xlsx, .pptx, and .pdf are supported.');
+        throw Exception(
+            'Unsupported file type: .$ext. Only .txt, .md, .docx, .xlsx, .pptx, and .pdf are supported.');
       }
     } catch (e) {
       yield DocumentTranslationProgress(
@@ -280,7 +282,8 @@ class DocumentTranslator {
         for (final entity in dir.listSync()) {
           if (entity is File) {
             final name = entity.path.split(Platform.pathSeparator).last;
-            if (name.startsWith('document_processor') && name.endsWith('.pyd')) {
+            if (name.startsWith('document_processor') &&
+                name.endsWith('.pyd')) {
               hasPyd = true;
               break;
             }
@@ -295,10 +298,14 @@ class DocumentTranslator {
       modulesDir: modulesDir,
       hasPyd: hasPyd,
       additionalArgs: [
-        '--input', filePath,
-        '--output', tempOutputPath,
-        '--src', sourceLang,
-        '--tgt', targetLang,
+        '--input',
+        filePath,
+        '--output',
+        tempOutputPath,
+        '--src',
+        sourceLang,
+        '--tgt',
+        targetLang,
         if (cacheFile.isNotEmpty) ...['--cache', cacheFile],
       ],
     );
@@ -306,7 +313,8 @@ class DocumentTranslator {
     try {
       final process = await Process.start(pythonExe, pythonArgs);
 
-      final progressController = StreamController<DocumentTranslationProgress>();
+      final progressController =
+          StreamController<DocumentTranslationProgress>();
       bool hasEmittedError = false;
 
       process.stdout
@@ -316,7 +324,7 @@ class DocumentTranslator {
         try {
           final data = jsonDecode(line) as Map<String, dynamic>;
           final status = data['status'] as String;
-          
+
           if (status == 'complete') {
             progressController.add(DocumentTranslationProgress(
               currentChunk: 100,
@@ -368,7 +376,9 @@ class DocumentTranslator {
             totalChunks: 0,
             percentage: 0.0,
             status: 'error',
-            error: err.isNotEmpty ? err : 'Python script exited with code $exitCode',
+            error: err.isNotEmpty
+                ? err
+                : 'Python script exited with code $exitCode',
           ));
         }
         progressController.close();
@@ -381,8 +391,20 @@ class DocumentTranslator {
         totalChunks: 0,
         percentage: 0.0,
         status: 'error',
-        error: 'Failed to start Python process: $e. Please verify Python is installed and in your PATH.',
+        error:
+            'Failed to start Python process: $e. Please verify Python is installed and in your PATH.',
       );
+    }
+  }
+
+  /// Checks whether a working Python runtime is detected
+  static Future<bool> isPythonAvailable() async {
+    final py = _getPythonExecutable();
+    try {
+      final res = await Process.run(py, ['--version']);
+      return res.exitCode == 0;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -393,14 +415,41 @@ class DocumentTranslator {
     if (File(bundledPath).existsSync()) {
       return bundledPath;
     }
-    
+
     // 2. Look for bundled python inside 'python/python.exe' in project root (for dev/testing)
     final devBundledPath = 'python/python.exe';
     if (File(devBundledPath).existsSync()) {
       return devBundledPath;
     }
-    
-    // 3. Fallback to system python
+
+    // 3. Look in AppData Windows Python installation paths
+    final localAppData = Platform.environment['LOCALAPPDATA'];
+    if (localAppData != null) {
+      final pyDir = Directory('$localAppData\\Programs\\Python');
+      if (pyDir.existsSync()) {
+        try {
+          for (final dir in pyDir.listSync()) {
+            if (dir is Directory &&
+                dir.path.toLowerCase().contains('python3')) {
+              final pyExe = '${dir.path}\\python.exe';
+              if (File(pyExe).existsSync()) {
+                return pyExe;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 4. Look in C:\Python*
+    for (final ver in ['312', '311', '310', '39', '38']) {
+      final cPy = 'C:\\Python$ver\\python.exe';
+      if (File(cPy).existsSync()) {
+        return cPy;
+      }
+    }
+
+    // 5. Fallback to system python
     return 'python';
   }
 

@@ -9,8 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import '../app_config.dart';
+import '../api_client.dart';
 import '../logic.dart';
 import '../document_translator.dart';
+import '../tts_service.dart';
+import '../stt_service.dart';
+import '../desktop_service.dart';
 import 'styles.dart';
 import 'dialogs.dart';
 import 'localization.dart';
@@ -33,15 +37,15 @@ class _MainWindowState extends State<MainWindow> {
 
   final TextEditingController _inputController = TextEditingController();
   final TextEditingController _outputController = TextEditingController();
-  
+
   bool _isLoading = false;
   String _status = 'Ready';
-  
+
   String _srcLang = 'Auto';
   String _tgtLang = 'VN';
   String _uiLang = 'VN';
-  
-  List<String> _attachedImages = [];
+
+  final List<String> _attachedImages = [];
   Timer? _debounceTimer;
 
   final GlobalKey _themeButtonKey = GlobalKey();
@@ -56,24 +60,35 @@ class _MainWindowState extends State<MainWindow> {
   int _estimatedWordCount = 0;
   bool _isTranslatingDoc = false;
   double _docProgress = 0.0;
-  String _docStatus = 'ready'; // ready, reading_file, translating_chunk, complete, error
+  String _docStatus =
+      'ready'; // ready, reading_file, translating_chunk, complete, error
   String? _docResultText;
   String? _docError;
   int _docCurrentChunk = 0;
   int _docTotalChunks = 0;
   StreamSubscription<DocumentTranslationProgress>? _docTranslationSubscription;
   int _historySubTabIndex = 0; // 0 for All, 1 for Saved
+  bool _isConfigPromptOpen = false;
 
   @override
   void initState() {
     super.initState();
-    _tgtLang = AppConfig.get('SETTINGS', 'default_target_lang', defaultValue: 'VN');
+    _tgtLang =
+        AppConfig.get('SETTINGS', 'default_target_lang', defaultValue: 'VN');
     _uiLang = AppConfig.get('SETTINGS', 'ui_lang', defaultValue: 'VN');
     _inputController.addListener(_onTextChanged);
+
+    DesktopService().initialize(
+      onQuickTranslate: () {
+        // Bring to front and focus
+      },
+      onScreenSnip: _triggerScreenSnip,
+    );
   }
 
   @override
   void dispose() {
+    DesktopService().dispose();
     _inputController.removeListener(_onTextChanged);
     _inputController.dispose();
     _outputController.dispose();
@@ -86,7 +101,8 @@ class _MainWindowState extends State<MainWindow> {
   void _onTextChanged() {
     if (_isLoading) return;
     _debounceTimer?.cancel();
-    final delayStr = AppConfig.get('SETTINGS', 'auto_translate_delay', defaultValue: '0');
+    final delayStr =
+        AppConfig.get('SETTINGS', 'auto_translate_delay', defaultValue: '0');
     final delay = int.tryParse(delayStr) ?? 0;
     if (delay > 0) {
       _debounceTimer = Timer(Duration(seconds: delay), () {
@@ -134,17 +150,94 @@ class _MainWindowState extends State<MainWindow> {
     } catch (_) {}
   }
 
+  bool _isRecordingVoice = false;
+
+  Future<void> _toggleVoiceRecording() async {
+    if (_isRecordingVoice) {
+      setState(() {
+        _isRecordingVoice = false;
+        _status = 'TRANSCRIBING AUDIO...';
+      });
+      final transcribedText =
+          await SttService.stopRecordingAndTranscribe(targetLang: _srcLang);
+      if (transcribedText != null && transcribedText.isNotEmpty) {
+        setState(() {
+          _inputController.text = transcribedText;
+          _status = 'VOICE INPUT: READY';
+        });
+        _startTranslation();
+      } else {
+        setState(() {
+          _status = 'VOICE INPUT: EMPTY OR FAILED';
+        });
+      }
+    } else {
+      final hasPerm = await SttService.hasPermission();
+      if (!hasPerm) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Microphone permission required.')),
+          );
+        }
+        return;
+      }
+      final started = await SttService.startRecording();
+      if (started) {
+        setState(() {
+          _isRecordingVoice = true;
+          _status = UiLocalizations.get('mic_recording', _uiLang).toUpperCase();
+        });
+      }
+    }
+  }
+
+  Future<void> _triggerScreenSnip() async {
+    setState(() => _status = 'SNIPPING SCREEN...');
+    final imagePath = await DesktopService.captureScreenSnip();
+    if (imagePath != null && mounted) {
+      setState(() {
+        _attachedImages.add(imagePath);
+        _status = 'ATTACHED SCREEN SNIP';
+      });
+      _startTranslation();
+    } else if (mounted) {
+      setState(() => _status = 'SNIP CANCELLED');
+    }
+  }
+
   void _startTranslation() async {
     if (_isLoading) return;
     final text = _inputController.text.trim();
     if (text.isEmpty && _attachedImages.isEmpty) return;
 
+    final isLocal = AppConfig.isLocalAi;
+    if (isLocal) {
+      final models = await ApiClient.getInstalledLocalModels();
+      if (models.isEmpty) {
+        if (mounted) _showMissingLocalModelPopup();
+        return;
+      }
+    } else {
+      final apiKey = AppConfig.get('NVIDIA', 'api_key').trim();
+      if (apiKey.isEmpty) {
+        if (mounted) _showMissingCloudConfigPopup();
+        return;
+      }
+    }
+
     _debounceTimer?.cancel();
-    final isFromCache = _attachedImages.isEmpty && TranslateLogic.isCached(text, _srcLang, _tgtLang);
+    final isFromCache = _attachedImages.isEmpty &&
+        TranslateLogic.isCached(text, _srcLang, _tgtLang);
     setState(() {
       _isLoading = true;
       _outputController.clear();
-      _status = isFromCache ? 'THINKING (CACHED)...' : 'THINKING...';
+      if (_attachedImages.isNotEmpty) {
+        _status = isLocal
+            ? 'QUÉT CHỮ & DỊCH ẢNH (OCR)...'
+            : 'DỊCH ẢNH (CLOUD VISION)...';
+      } else {
+        _status = isFromCache ? 'THINKING (CACHED)...' : 'THINKING...';
+      }
     });
 
     try {
@@ -156,6 +249,21 @@ class _MainWindowState extends State<MainWindow> {
       );
 
       await for (final chunk in responseStream) {
+        if (chunk.contains('Không thể khởi động llama-server local') ||
+            chunk.contains('Vui lòng kiểm tra model GGUF') ||
+            chunk.contains('Lỗi kết nối Local AI')) {
+          _outputController.clear();
+          if (mounted) _showMissingLocalModelPopup();
+          break;
+        }
+        if (chunk.contains('status 401') ||
+            chunk.contains('Unauthorized') ||
+            chunk.contains('status 403') ||
+            chunk.contains('API Key Cloud không hợp lệ')) {
+          _outputController.clear();
+          if (mounted) _showMissingCloudConfigPopup();
+          break;
+        }
         _outputController.text += chunk;
       }
 
@@ -320,9 +428,24 @@ class _MainWindowState extends State<MainWindow> {
     }
   }
 
-  void _startDocTranslation() {
+  void _startDocTranslation() async {
     if (_isTranslatingDoc || _selectedFilePath == null) return;
-    
+
+    final isLocal = AppConfig.isLocalAi;
+    if (isLocal) {
+      final models = await ApiClient.getInstalledLocalModels();
+      if (models.isEmpty) {
+        if (mounted) _showMissingLocalModelPopup();
+        return;
+      }
+    } else {
+      final apiKey = AppConfig.get('NVIDIA', 'api_key').trim();
+      if (apiKey.isEmpty) {
+        if (mounted) _showMissingCloudConfigPopup();
+        return;
+      }
+    }
+
     setState(() {
       _isTranslatingDoc = true;
       _docProgress = 0.0;
@@ -348,6 +471,17 @@ class _MainWindowState extends State<MainWindow> {
         } else if (progress.status.startsWith('error')) {
           _docError = progress.error;
           _isTranslatingDoc = false;
+          if (_docError != null &&
+              (_docError!.contains('Không thể khởi động llama-server local') ||
+                  _docError!.contains('Vui lòng kiểm tra model GGUF') ||
+                  _docError!.contains('Lỗi kết nối Local AI'))) {
+            if (mounted) _showMissingLocalModelPopup();
+          } else if (_docError != null &&
+              (_docError!.contains('401') ||
+                  _docError!.contains('Unauthorized') ||
+                  _docError!.contains('403'))) {
+            if (mounted) _showMissingCloudConfigPopup();
+          }
         }
       });
     }, onError: (e) {
@@ -373,12 +507,15 @@ class _MainWindowState extends State<MainWindow> {
       final parts = originalName.split('.');
       final ext = parts.last;
       final baseName = parts.sublist(0, parts.length - 1).join('.');
-      
+
       final suffix = '_$_tgtLang'; // e.g. _VN or _CN
-      final finalOutputPath = '$dir/${baseName}$suffix.$ext';
-      
+      final finalOutputPath = '$dir/$baseName$suffix.$ext';
+
       final extLower = ext.toLowerCase();
-      if (extLower == 'pdf' || extLower == 'xlsx' || extLower == 'pptx' || extLower == 'docx') {
+      if (extLower == 'pdf' ||
+          extLower == 'xlsx' ||
+          extLower == 'pptx' ||
+          extLower == 'docx') {
         final tempFile = File(resultText);
         if (await tempFile.exists()) {
           await tempFile.copy(finalOutputPath);
@@ -393,7 +530,8 @@ class _MainWindowState extends State<MainWindow> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${UiLocalizations.get('save_success', _uiLang)}: $finalOutputPath'),
+            content: Text(
+                '${UiLocalizations.get('save_success', _uiLang)}: $finalOutputPath'),
             backgroundColor: _c.statusActive,
             duration: const Duration(seconds: 5),
           ),
@@ -428,7 +566,7 @@ class _MainWindowState extends State<MainWindow> {
       final parts = originalName.split('.');
       final ext = parts.last.toLowerCase();
       final baseName = parts.sublist(0, parts.length - 1).join('.');
-      
+
       // Default suggested name
       final suggestedName = '${baseName}_translated.$ext';
 
@@ -533,15 +671,16 @@ class _MainWindowState extends State<MainWindow> {
       final state = _status.substring('PROXY UPDATED: '.length);
       final isEnabled = state == 'ENABLED';
       final stateStr = UiLocalizations.get(
-          isEnabled ? 'proxy_enabled_status' : 'proxy_disabled_status', _uiLang);
+          isEnabled ? 'proxy_enabled_status' : 'proxy_disabled_status',
+          _uiLang);
       final template = UiLocalizations.get('proxy_updated_status', _uiLang);
       return template.replaceAll('{state}', stateStr);
     }
-    
+
     final isCached = _status.contains('(CACHED)');
     final cleanStatus = _status.replaceAll('(CACHED)', '').trim();
     final lowerStatus = cleanStatus.toLowerCase().replaceAll('...', '');
-    
+
     String result = cleanStatus;
     if (lowerStatus == 'ready') {
       result = UiLocalizations.get('ready', _uiLang);
@@ -554,7 +693,7 @@ class _MainWindowState extends State<MainWindow> {
     } else if (lowerStatus == 'error') {
       result = UiLocalizations.get('error', _uiLang);
     }
-    
+
     if (isCached) {
       if (_uiLang == 'VN') {
         return '$result (BẢN NHỚ)';
@@ -595,12 +734,18 @@ class _MainWindowState extends State<MainWindow> {
             ),
           ),
           const Spacer(),
+          // Provider Switcher (Cloud / Local AI)
+          _buildProviderToggle(),
+          const SizedBox(width: 8),
           // Proxy Setup Button
           TextButton.icon(
             icon: Icon(Icons.language, size: 16, color: _c.textPrimary),
             label: Text(
               UiLocalizations.get('proxy_btn', _uiLang),
-              style: TextStyle(color: _c.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: _c.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold),
             ),
             onPressed: () {
               showDialog(
@@ -611,9 +756,11 @@ class _MainWindowState extends State<MainWindow> {
                 ),
               ).then((updated) {
                 if (updated == true) {
-                  final proxyEnabled = AppConfig.get('PROXY', 'enabled') == 'true';
+                  final proxyEnabled =
+                      AppConfig.get('PROXY', 'enabled') == 'true';
                   setState(() {
-                    _status = 'PROXY UPDATED: ${proxyEnabled ? 'ENABLED' : 'DISABLED'}';
+                    _status =
+                        'PROXY UPDATED: ${proxyEnabled ? 'ENABLED' : 'DISABLED'}';
                   });
                 }
               });
@@ -630,7 +777,10 @@ class _MainWindowState extends State<MainWindow> {
             ),
             label: Text(
               UiLocalizations.get(themeLabelKey, _uiLang),
-              style: TextStyle(color: _c.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: _c.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold),
             ),
             onPressed: _toggleThemeReveal,
           ),
@@ -640,7 +790,10 @@ class _MainWindowState extends State<MainWindow> {
             icon: Icon(Icons.g_translate, size: 16, color: _c.textPrimary),
             label: Text(
               _uiLang.toUpperCase(),
-              style: TextStyle(color: _c.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: _c.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold),
             ),
             onPressed: _toggleUiLang,
           ),
@@ -649,7 +802,486 @@ class _MainWindowState extends State<MainWindow> {
     );
   }
 
-  Widget _buildLanguageButton(String label, bool isSelected, VoidCallback onPressed, Color activeColor) {
+  void _openLocalAiDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+        child: LocalAiDialog(uiLang: _uiLang),
+      ),
+    ).then((updated) {
+      if (updated == true && mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _openCloudAiDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+        child: CloudAiDialog(uiLang: _uiLang),
+      ),
+    ).then((updated) {
+      if (updated == true && mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  Future<void> _showMissingLocalModelPopup() async {
+    if (!mounted || _isConfigPromptOpen) return;
+    _isConfigPromptOpen = true;
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: GlassCard(
+              borderColor: _c.borderDefault,
+              child: Container(
+                width: 470,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _c.targetAccent.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: _c.targetAccent.withOpacity(0.4)),
+                          ),
+                          child: Icon(Icons.cloud_download,
+                              color: _c.targetAccent, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _uiLang == 'VN'
+                                    ? 'Chưa Tải Model AI Cục Bộ'
+                                    : (_uiLang == 'ENG'
+                                        ? 'No Local Model Found'
+                                        : '未找到本地 AI 模型'),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: _c.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Embedded llama.cpp Standalone',
+                                style: TextStyle(
+                                    fontSize: 11, color: _c.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.of(ctx).pop(false),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: _c.bgTertiary.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: _c.borderDefault.withOpacity(0.3)),
+                              ),
+                              child: Icon(Icons.close_rounded,
+                                  size: 18, color: _c.textSecondary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.bgTertiary.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: _c.borderDefault.withOpacity(0.25)),
+                      ),
+                      child: Text(
+                        _uiLang == 'VN'
+                            ? 'Ứng dụng chưa tìm thấy file model .gguf nào trong thư mục models/ để dịch offline.\n\nBạn có muốn mở bảng Cài đặt Local AI để tải model 1-Click (khuyên dùng Qwen2.5-1.5B tối ưu cho máy 8GB RAM) ngay bây giờ không?'
+                            : (_uiLang == 'ENG'
+                                ? 'No .gguf model files found in models/ for offline translation.\n\nWould you like to open Local AI Settings to download a 1-Click model (e.g. Qwen2.5-1.5B for 8GB RAM) now?'
+                                : '在 models/ 目录中未找到用于离线翻译的 .gguf 模型文件。\n\n是否立即打开本地 AI 设置以一键下载推荐的 Qwen2.5-1.5B 模型？'),
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            color: _c.textPrimary,
+                            height: 1.45),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: Text(
+                            _uiLang == 'VN'
+                                ? 'Để sau'
+                                : (_uiLang == 'ENG' ? 'Later' : '稍后'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.download_rounded, size: 16),
+                          label: Text(
+                            _uiLang == 'VN'
+                                ? 'Mở Cài Đặt & Tải Model'
+                                : (_uiLang == 'ENG'
+                                    ? 'Download Model Now'
+                                    : '立即下载模型'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _c.targetAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                          ),
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      if (confirmed == true && mounted) {
+        _openLocalAiDialog();
+      }
+    } finally {
+      _isConfigPromptOpen = false;
+    }
+  }
+
+  Future<void> _showMissingCloudConfigPopup() async {
+    if (!mounted || _isConfigPromptOpen) return;
+    _isConfigPromptOpen = true;
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: GlassCard(
+              borderColor: _c.borderDefault,
+              child: Container(
+                width: 470,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _c.linkAccent.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: _c.linkAccent.withOpacity(0.4)),
+                          ),
+                          child: Icon(Icons.cloud_outlined,
+                              color: _c.linkAccent, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _uiLang == 'VN'
+                                    ? 'Chưa Cấu Hình Cloud AI'
+                                    : (_uiLang == 'ENG'
+                                        ? 'Cloud AI Not Configured'
+                                        : '未配置云端 AI'),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: _c.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'NVIDIA NIM / OpenAI / Groq / OpenRouter',
+                                style: TextStyle(
+                                    fontSize: 11, color: _c.textMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.of(ctx).pop(false),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: _c.bgTertiary.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: _c.borderDefault.withOpacity(0.3)),
+                              ),
+                              child: Icon(Icons.close_rounded,
+                                  size: 18, color: _c.textSecondary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _c.bgTertiary.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: _c.borderDefault.withOpacity(0.25)),
+                      ),
+                      child: Text(
+                        _uiLang == 'VN'
+                            ? 'Bạn chưa cấu hình API Key cho Cloud AI (hoặc API Key hiện tại đang để trống).\n\nBạn có muốn mở bảng Cài đặt Cloud AI để nhập API Key và cấu hình model dịch ngay không?'
+                            : (_uiLang == 'ENG'
+                                ? 'You have not configured an API Key for Cloud AI yet.\n\nWould you like to open Cloud AI Settings to enter your API Key and select a model now?'
+                                : '您尚未配置云端 AI 的 API Key。\n\n是否立即打开云端 AI 设置输入 API Key 并选择翻译模型？'),
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            color: _c.textPrimary,
+                            height: 1.45),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: Text(
+                            _uiLang == 'VN'
+                                ? 'Để sau'
+                                : (_uiLang == 'ENG' ? 'Later' : '稍后'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.settings, size: 16),
+                          label: Text(
+                            _uiLang == 'VN'
+                                ? 'Cấu Hình Ngay'
+                                : (_uiLang == 'ENG' ? 'Configure Now' : '立即配置'),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _c.linkAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                          ),
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      if (confirmed == true && mounted) {
+        _openCloudAiDialog();
+      }
+    } finally {
+      _isConfigPromptOpen = false;
+    }
+  }
+
+  Widget _buildProviderToggle() {
+    final isLocal = AppConfig.isLocalAi;
+    final engine = AppConfig.localEngine;
+    final rawLocal = engine == 'llama_cpp'
+        ? AppConfig.localGgufModel
+        : AppConfig.get('LOCAL_AI', 'model', defaultValue: 'qwen2.5:1.5b');
+    final localModel =
+        rawLocal.replaceAll(RegExp(r'\.gguf$', caseSensitive: false), '');
+    final cloudModel = AppConfig.get('NVIDIA', 'model',
+            defaultValue: 'qwen/qwen2.5-7b-instruct')
+        .split('/')
+        .last;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _c.bgTertiary.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _c.borderDefault.withOpacity(0.15)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () async {
+              final newMode = isLocal ? 'cloud' : 'local';
+              await AppConfig.setActiveProvider(newMode);
+              final activeModel = newMode == 'local' ? localModel : cloudModel;
+              setState(() {
+                _status = newMode == 'local'
+                    ? 'LOCAL: $activeModel'
+                    : 'CLOUD: $activeModel';
+              });
+
+              if (newMode == 'local') {
+                final models = await ApiClient.getInstalledLocalModels();
+                final hasModel = models.any((m) =>
+                    m.toLowerCase() == rawLocal.toLowerCase() ||
+                    m.toLowerCase().contains(rawLocal.toLowerCase()));
+                if (!hasModel && mounted) {
+                  _showMissingLocalModelPopup();
+                } else {
+                  final isAlive = await ApiClient.checkLocalAiHealth();
+                  if (!isAlive) {
+                    await ApiClient.ensureLocalAiRunning();
+                  }
+                }
+              } else {
+                final apiKey = AppConfig.get('NVIDIA', 'api_key').trim();
+                if (apiKey.isEmpty && mounted) {
+                  _showMissingCloudConfigPopup();
+                }
+              }
+            },
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isLocal
+                    ? _c.targetAccent.withOpacity(0.18)
+                    : _c.linkAccent.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isLocal ? Icons.computer : Icons.cloud_outlined,
+                    size: 14,
+                    color: isLocal ? _c.targetAccent : _c.linkAccent,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    isLocal ? 'LOCAL ($localModel)' : 'CLOUD ($cloudModel)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isLocal ? _c.targetAccent : _c.linkAccent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 2),
+          PopupMenuButton<String>(
+            tooltip: isLocal
+                ? UiLocalizations.get('local_ai_title', _uiLang)
+                : UiLocalizations.get('cloud_ai_title', _uiLang),
+            padding: EdgeInsets.zero,
+            icon: Icon(Icons.tune,
+                size: 14, color: _c.textPrimary.withOpacity(0.7)),
+            constraints: const BoxConstraints(),
+            splashRadius: 14,
+            color: _c.brightness == Brightness.dark
+                ? const Color(0xF51E293B)
+                : const Color(0xF8FFFFFF),
+            surfaceTintColor: Colors.transparent,
+            elevation: 16,
+            shadowColor: Colors.black
+                .withOpacity(_c.brightness == Brightness.dark ? 0.45 : 0.16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: _c.brightness == Brightness.dark
+                    ? const Color(0x38FFFFFF)
+                    : const Color(0x29000000),
+                width: 1.1,
+              ),
+            ),
+            onSelected: (val) {
+              if (val == 'cloud') {
+                _openCloudAiDialog();
+              } else if (val == 'local') {
+                _openLocalAiDialog();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'cloud',
+                height: 38,
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_outlined, size: 16, color: _c.linkAccent),
+                    const SizedBox(width: 10),
+                    Text(
+                      UiLocalizations.get('menu_config_cloud', _uiLang),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: _c.textPrimary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'local',
+                height: 38,
+                child: Row(
+                  children: [
+                    Icon(Icons.computer, size: 16, color: _c.targetAccent),
+                    const SizedBox(width: 10),
+                    Text(
+                      UiLocalizations.get('menu_config_local', _uiLang),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: _c.textPrimary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageButton(String label, bool isSelected,
+      VoidCallback onPressed, Color activeColor) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       child: InkWell(
@@ -687,11 +1319,17 @@ class _MainWindowState extends State<MainWindow> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(UiLocalizations.get('source', _uiLang), style: TextStyle(color: _c.linkAccent, fontWeight: FontWeight.bold, fontSize: 10)),
+              Text(UiLocalizations.get('source', _uiLang),
+                  style: TextStyle(
+                      color: _c.linkAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10)),
               const SizedBox(height: 6),
               Row(
                 children: ['Auto', 'VN', 'ENG', 'CN'].map((code) {
-                  final label = code == 'Auto' ? UiLocalizations.get('lang_auto', _uiLang) : code;
+                  final label = code == 'Auto'
+                      ? UiLocalizations.get('lang_auto', _uiLang)
+                      : code;
                   return _buildLanguageButton(
                     label,
                     _srcLang == code,
@@ -712,7 +1350,8 @@ class _MainWindowState extends State<MainWindow> {
                 Tooltip(
                   message: UiLocalizations.get('tooltip_swap', _uiLang),
                   child: IconButton(
-                    icon: Icon(Icons.swap_horiz, size: 22, color: _c.textSecondary),
+                    icon: Icon(Icons.swap_horiz,
+                        size: 22, color: _c.textSecondary),
                     onPressed: _swapLanguages,
                   ),
                 ),
@@ -723,7 +1362,11 @@ class _MainWindowState extends State<MainWindow> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(UiLocalizations.get('target', _uiLang), style: TextStyle(color: _c.targetAccent, fontWeight: FontWeight.bold, fontSize: 10)),
+              Text(UiLocalizations.get('target', _uiLang),
+                  style: TextStyle(
+                      color: _c.targetAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10)),
               const SizedBox(height: 6),
               Row(
                 children: ['VN', 'ENG', 'CN'].map((code) {
@@ -744,7 +1387,10 @@ class _MainWindowState extends State<MainWindow> {
             children: [
               Text(
                 _uiLang == 'VN' ? 'CHẾ ĐỘ' : (_uiLang == 'ENG' ? 'MODE' : '模式'),
-                style: TextStyle(color: _c.textMuted, fontWeight: FontWeight.bold, fontSize: 10),
+                style: TextStyle(
+                    color: _c.textMuted,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10),
               ),
               const SizedBox(height: 6),
               _buildTabBar(),
@@ -831,11 +1477,17 @@ class _MainWindowState extends State<MainWindow> {
                 Container(
                   decoration: BoxDecoration(
                     color: readOnly
-                        ? (isTransparent ? _c.bgSecondary.withOpacity(0.15) : _c.bgSecondary)
-                        : (isTransparent ? _c.bgSecondary.withOpacity(0.3) : _c.bgSecondary),
+                        ? (isTransparent
+                            ? _c.bgSecondary.withOpacity(0.15)
+                            : _c.bgSecondary)
+                        : (isTransparent
+                            ? _c.bgSecondary.withOpacity(0.3)
+                            : _c.bgSecondary),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isTransparent ? _c.borderDefault.withOpacity(0.12) : _c.borderDefault,
+                      color: isTransparent
+                          ? _c.borderDefault.withOpacity(0.12)
+                          : _c.borderDefault,
                     ),
                   ),
                   padding: EdgeInsets.only(
@@ -877,23 +1529,30 @@ class _MainWindowState extends State<MainWindow> {
                         itemCount: _attachedImages.length,
                         itemBuilder: (context, index) {
                           final path = _attachedImages[index];
-                          final fileName = path.split('\\').last.split('/').last;
+                          final fileName =
+                              path.split('\\').last.split('/').last;
                           return Container(
                             margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: _c.bgTertiary.withOpacity(0.6),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: _c.borderDefault.withOpacity(0.2)),
+                              border: Border.all(
+                                  color: _c.borderDefault.withOpacity(0.2)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.image, size: 14, color: _c.linkAccent),
+                                Icon(Icons.image,
+                                    size: 14, color: _c.linkAccent),
                                 const SizedBox(width: 6),
                                 Text(
                                   fileName,
-                                  style: TextStyle(fontSize: 11, color: _c.textSecondary, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: _c.textSecondary,
+                                      fontWeight: FontWeight.w600),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(width: 8),
@@ -904,7 +1563,8 @@ class _MainWindowState extends State<MainWindow> {
                                     });
                                   },
                                   borderRadius: BorderRadius.circular(4),
-                                  child: Icon(Icons.close, size: 14, color: _c.statusRemoved),
+                                  child: Icon(Icons.close,
+                                      size: 14, color: _c.statusRemoved),
                                 ),
                               ],
                             ),
@@ -929,7 +1589,9 @@ class _MainWindowState extends State<MainWindow> {
         color: isTransparent ? _c.bgTertiary.withOpacity(0.3) : _c.bgTertiary,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isTransparent ? _c.borderDefault.withOpacity(0.08) : _c.borderDefault,
+          color: isTransparent
+              ? _c.borderDefault.withOpacity(0.08)
+              : _c.borderDefault,
         ),
       ),
       child: Row(
@@ -1027,9 +1689,11 @@ class _MainWindowState extends State<MainWindow> {
                                   ),
                                   const SizedBox(height: 16),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
                                     child: Text(
-                                      UiLocalizations.get('drag_drop_hint', _uiLang),
+                                      UiLocalizations.get(
+                                          'drag_drop_hint', _uiLang),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: _c.textPrimary,
@@ -1040,7 +1704,8 @@ class _MainWindowState extends State<MainWindow> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    UiLocalizations.get('supported_formats_hint', _uiLang),
+                                    UiLocalizations.get(
+                                        'supported_formats_hint', _uiLang),
                                     style: TextStyle(
                                       color: _c.textMuted,
                                       fontSize: 11,
@@ -1049,7 +1714,8 @@ class _MainWindowState extends State<MainWindow> {
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
                                     icon: const Icon(Icons.add, size: 16),
-                                    label: Text(UiLocalizations.get('select_file', _uiLang)),
+                                    label: Text(UiLocalizations.get(
+                                        'select_file', _uiLang)),
                                     onPressed: _selectDocumentFile,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _c.linkAccent,
@@ -1082,16 +1748,19 @@ class _MainWindowState extends State<MainWindow> {
                                         ? Icons.picture_as_pdf
                                         : (_selectedFileName!.endsWith('.xlsx')
                                             ? Icons.table_chart
-                                            : (_selectedFileName!.endsWith('.pptx')
+                                            : (_selectedFileName!
+                                                    .endsWith('.pptx')
                                                 ? Icons.slideshow
-                                                : (_selectedFileName!.endsWith('.docx')
+                                                : (_selectedFileName!
+                                                        .endsWith('.docx')
                                                     ? Icons.description
                                                     : Icons.article))),
                                     color: _selectedFileName!.endsWith('.pdf')
                                         ? Colors.redAccent
                                         : (_selectedFileName!.endsWith('.xlsx')
                                             ? Colors.green
-                                            : (_selectedFileName!.endsWith('.pptx')
+                                            : (_selectedFileName!
+                                                    .endsWith('.pptx')
                                                 ? Colors.orange
                                                 : _c.linkAccent)),
                                     size: 32,
@@ -1099,7 +1768,8 @@ class _MainWindowState extends State<MainWindow> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _selectedFileName!,
@@ -1123,7 +1793,8 @@ class _MainWindowState extends State<MainWindow> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline, color: _c.statusRemoved),
+                                    icon: Icon(Icons.delete_outline,
+                                        color: _c.statusRemoved),
                                     onPressed: _isTranslatingDoc
                                         ? null
                                         : () {
@@ -1139,7 +1810,8 @@ class _MainWindowState extends State<MainWindow> {
                                               _docError = null;
                                             });
                                           },
-                                    tooltip: UiLocalizations.get('remove_file', _uiLang),
+                                    tooltip: UiLocalizations.get(
+                                        'remove_file', _uiLang),
                                   ),
                                 ],
                               ),
@@ -1152,12 +1824,16 @@ class _MainWindowState extends State<MainWindow> {
                               const SizedBox(height: 12),
                               _buildInfoRow(
                                 UiLocalizations.get('char_count', _uiLang),
-                                _estimatedCharCount > 0 ? _estimatedCharCount.toString() : '...',
+                                _estimatedCharCount > 0
+                                    ? _estimatedCharCount.toString()
+                                    : '...',
                               ),
                               const SizedBox(height: 12),
                               _buildInfoRow(
                                 UiLocalizations.get('word_count', _uiLang),
-                                _estimatedWordCount > 0 ? _estimatedWordCount.toString() : '...',
+                                _estimatedWordCount > 0
+                                    ? _estimatedWordCount.toString()
+                                    : '...',
                               ),
                             ],
                           ),
@@ -1189,7 +1865,9 @@ class _MainWindowState extends State<MainWindow> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (!_isTranslatingDoc && _docResultText == null && _docError == null) ...[
+                      if (!_isTranslatingDoc &&
+                          _docResultText == null &&
+                          _docError == null) ...[
                         Icon(
                           Icons.translate,
                           size: 48,
@@ -1224,8 +1902,10 @@ class _MainWindowState extends State<MainWindow> {
                             child: LinearProgressIndicator(
                               value: _docProgress,
                               minHeight: 6,
-                              backgroundColor: _c.borderDefault.withOpacity(0.1),
-                              valueColor: AlwaysStoppedAnimation<Color>(_c.linkAccent),
+                              backgroundColor:
+                                  _c.borderDefault.withOpacity(0.1),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(_c.linkAccent),
                             ),
                           ),
                         ),
@@ -1241,11 +1921,13 @@ class _MainWindowState extends State<MainWindow> {
                         const SizedBox(height: 24),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.cancel, size: 16),
-                          label: Text(UiLocalizations.get('proxy_cancel', _uiLang)),
+                          label: Text(
+                              UiLocalizations.get('proxy_cancel', _uiLang)),
                           onPressed: _cancelDocTranslation,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: _c.statusRemoved,
-                            side: BorderSide(color: _c.statusRemoved.withOpacity(0.5)),
+                            side: BorderSide(
+                                color: _c.statusRemoved.withOpacity(0.5)),
                           ),
                         ),
                       ] else if (_docResultText != null) ...[
@@ -1266,7 +1948,8 @@ class _MainWindowState extends State<MainWindow> {
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
                           icon: const Icon(Icons.download, size: 16),
-                          label: Text(UiLocalizations.get('save_translated', _uiLang)),
+                          label: Text(
+                              UiLocalizations.get('save_translated', _uiLang)),
                           onPressed: _saveTranslatedDoc,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _c.targetAccent,
@@ -1298,7 +1981,8 @@ class _MainWindowState extends State<MainWindow> {
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             icon: const Icon(Icons.refresh, size: 16),
-                            label: Text(UiLocalizations.get('start_translation', _uiLang)),
+                            label: Text(UiLocalizations.get(
+                                'start_translation', _uiLang)),
                             onPressed: _startDocTranslation,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _c.linkAccent,
@@ -1337,7 +2021,8 @@ class _MainWindowState extends State<MainWindow> {
             ? Tooltip(
                 message: value,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: _c.bgPrimary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(6),
@@ -1360,7 +2045,8 @@ class _MainWindowState extends State<MainWindow> {
   @override
   Widget build(BuildContext context) {
     final bool useRoundCorners = !Platform.isWindows || AppConfig.isWindows11;
-    final borderRadius = useRoundCorners ? BorderRadius.circular(15) : BorderRadius.zero;
+    final borderRadius =
+        useRoundCorners ? BorderRadius.circular(15) : BorderRadius.zero;
 
     return Container(
       decoration: BoxDecoration(
@@ -1377,7 +2063,8 @@ class _MainWindowState extends State<MainWindow> {
               Divider(height: 1, color: _c.borderDefault.withOpacity(0.1)),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Column(
                     children: [
                       _buildLanguageSelectorPanel(),
@@ -1405,10 +2092,29 @@ class _MainWindowState extends State<MainWindow> {
                                   key: const ValueKey('text_translation'),
                                   onKeyEvent: (node, event) {
                                     if (event is KeyDownEvent &&
-                                        event.logicalKey == LogicalKeyboardKey.enter &&
-                                        HardwareKeyboard.instance.isControlPressed) {
+                                        event.logicalKey ==
+                                            LogicalKeyboardKey.enter &&
+                                        HardwareKeyboard
+                                            .instance.isControlPressed) {
                                       _startTranslation();
                                       return KeyEventResult.handled;
+                                    }
+                                    if (event is KeyDownEvent &&
+                                        event.logicalKey ==
+                                            LogicalKeyboardKey.keyV &&
+                                        HardwareKeyboard
+                                            .instance.isControlPressed) {
+                                      DesktopService.getClipboardImage()
+                                          .then((imgPath) {
+                                        if (imgPath != null && mounted) {
+                                          setState(() {
+                                            _attachedImages.add(imgPath);
+                                            _status =
+                                                'ATTACHED CLIPBOARD IMAGE';
+                                          });
+                                          _startTranslation();
+                                        }
+                                      });
                                     }
                                     return KeyEventResult.ignored;
                                   },
@@ -1416,8 +2122,10 @@ class _MainWindowState extends State<MainWindow> {
                                     children: [
                                       _buildEditorField(
                                         controller: _inputController,
-                                        title: UiLocalizations.get('input_title', _uiLang),
-                                        hint: UiLocalizations.get('input_hint', _uiLang),
+                                        title: UiLocalizations.get(
+                                            'input_title', _uiLang),
+                                        hint: UiLocalizations.get(
+                                            'input_hint', _uiLang),
                                         readOnly: _isLoading,
                                         fontColor: _c.textPrimary,
                                         fontSize: 14,
@@ -1425,45 +2133,115 @@ class _MainWindowState extends State<MainWindow> {
                                         isInput: true,
                                         actions: [
                                           IconButton(
-                                            icon: const Icon(Icons.attach_file, size: 16),
-                                            onPressed: _isLoading ? null : _attachImages,
-                                            tooltip: UiLocalizations.get('tooltip_attach', _uiLang),
+                                            icon: Icon(
+                                              _isRecordingVoice
+                                                  ? Icons.stop_circle
+                                                  : Icons.mic,
+                                              size: 16,
+                                              color: _isRecordingVoice
+                                                  ? Colors.redAccent
+                                                  : null,
+                                            ),
+                                            onPressed: _isLoading
+                                                ? null
+                                                : _toggleVoiceRecording,
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_mic', _uiLang),
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.copy, size: 16),
-                                            onPressed: () => _copyToClipboard(_inputController, 'Input'),
-                                            tooltip: UiLocalizations.get('tooltip_copy_input', _uiLang),
+                                            icon: const Icon(Icons.volume_up,
+                                                size: 16),
+                                            onPressed: _inputController.text
+                                                    .trim()
+                                                    .isEmpty
+                                                ? null
+                                                : () => TtsService.speak(
+                                                    _inputController.text,
+                                                    _srcLang),
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_speak', _uiLang),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.crop_free,
+                                                size: 16),
+                                            onPressed: _isLoading
+                                                ? null
+                                                : _triggerScreenSnip,
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_snip', _uiLang),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.attach_file,
+                                                size: 16),
+                                            onPressed: _isLoading
+                                                ? null
+                                                : _attachImages,
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_attach', _uiLang),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.copy,
+                                                size: 16),
+                                            onPressed: () => _copyToClipboard(
+                                                _inputController, 'Input'),
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_copy_input', _uiLang),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(width: 20),
                                       _buildEditorField(
                                         controller: _outputController,
-                                        title: UiLocalizations.get('result_title', _uiLang),
-                                        hint: UiLocalizations.get('result_hint', _uiLang),
+                                        title: UiLocalizations.get(
+                                            'result_title', _uiLang),
+                                        hint: UiLocalizations.get(
+                                            'result_hint', _uiLang),
                                         readOnly: true,
                                         fontColor: _c.textPrimary,
                                         fontSize: 15,
                                         fontFamily: 'Segoe UI',
                                         isInput: false,
                                         actions: [
-                                          if (_outputController.text.trim().isNotEmpty && !_isLoading)
+                                          if (_outputController.text
+                                                  .trim()
+                                                  .isNotEmpty &&
+                                              !_isLoading) ...[
+                                            IconButton(
+                                              icon: const Icon(Icons.volume_up,
+                                                  size: 16),
+                                              onPressed: () => TtsService.speak(
+                                                  _outputController.text,
+                                                  _tgtLang),
+                                              tooltip: UiLocalizations.get(
+                                                  'tooltip_speak', _uiLang),
+                                            ),
                                             IconButton(
                                               icon: Icon(
-                                                _isCurrentResultSaved ? Icons.star : Icons.star_border,
+                                                _isCurrentResultSaved
+                                                    ? Icons.star
+                                                    : Icons.star_border,
                                                 size: 16,
-                                                color: _isCurrentResultSaved ? Colors.amber : null,
+                                                color: _isCurrentResultSaved
+                                                    ? Colors.amber
+                                                    : null,
                                               ),
-                                              onPressed: _toggleSaveCurrentTranslation,
+                                              onPressed:
+                                                  _toggleSaveCurrentTranslation,
                                               tooltip: UiLocalizations.get(
-                                                _isCurrentResultSaved ? 'tooltip_unsave' : 'tooltip_save',
+                                                _isCurrentResultSaved
+                                                    ? 'tooltip_unsave'
+                                                    : 'tooltip_save',
                                                 _uiLang,
                                               ),
                                             ),
+                                          ],
                                           IconButton(
-                                            icon: const Icon(Icons.copy, size: 16),
-                                            onPressed: () => _copyToClipboard(_outputController, 'Result'),
-                                            tooltip: UiLocalizations.get('tooltip_copy_result', _uiLang),
+                                            icon: const Icon(Icons.copy,
+                                                size: 16),
+                                            onPressed: () => _copyToClipboard(
+                                                _outputController, 'Result'),
+                                            tooltip: UiLocalizations.get(
+                                                'tooltip_copy_result', _uiLang),
                                           ),
                                         ],
                                       ),
@@ -1472,7 +2250,8 @@ class _MainWindowState extends State<MainWindow> {
                                 )
                               : _activeTabIndex == 1
                                   ? KeyedSubtree(
-                                      key: const ValueKey('document_translation'),
+                                      key: const ValueKey(
+                                          'document_translation'),
                                       child: _buildDocumentTranslationView(),
                                     )
                                   : KeyedSubtree(
@@ -1505,8 +2284,11 @@ class _MainWindowState extends State<MainWindow> {
                                       borderRadius: BorderRadius.circular(2),
                                       child: LinearProgressIndicator(
                                         minHeight: 4,
-                                        backgroundColor: _c.borderDefault.withOpacity(0.1),
-                                        valueColor: AlwaysStoppedAnimation<Color>(_c.linkAccent),
+                                        backgroundColor:
+                                            _c.borderDefault.withOpacity(0.1),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                _c.linkAccent),
                                       ),
                                     ),
                                   ],
@@ -1518,11 +2300,15 @@ class _MainWindowState extends State<MainWindow> {
                               message: 'Switch UI Language',
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                icon: Icon(Icons.language, size: 14, color: _c.textPrimary.withOpacity(0.6)),
+                                icon: Icon(Icons.language,
+                                    size: 14,
+                                    color: _c.textPrimary.withOpacity(0.6)),
                                 label: Text(
                                   _uiLang.toUpperCase(),
                                   style: TextStyle(
@@ -1550,8 +2336,11 @@ class _MainWindowState extends State<MainWindow> {
                             onPressed: _isLoading ? null : _startTranslation,
                             child: Text(
                               _isLoading
-                                  ? UiLocalizations.get('thinking', _uiLang).toUpperCase()
-                                  : UiLocalizations.get('start_translation', _uiLang).toUpperCase(),
+                                  ? UiLocalizations.get('thinking', _uiLang)
+                                      .toUpperCase()
+                                  : UiLocalizations.get(
+                                          'start_translation', _uiLang)
+                                      .toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -1571,13 +2360,17 @@ class _MainWindowState extends State<MainWindow> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
                             ),
-                            onPressed: (_selectedFilePath == null || _isTranslatingDoc)
-                                ? null
-                                : _startDocTranslation,
+                            onPressed:
+                                (_selectedFilePath == null || _isTranslatingDoc)
+                                    ? null
+                                    : _startDocTranslation,
                             child: Text(
                               _isTranslatingDoc
-                                  ? UiLocalizations.get('thinking', _uiLang).toUpperCase()
-                                  : UiLocalizations.get('start_translation', _uiLang).toUpperCase(),
+                                  ? UiLocalizations.get('thinking', _uiLang)
+                                      .toUpperCase()
+                                  : UiLocalizations.get(
+                                          'start_translation', _uiLang)
+                                      .toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -1610,15 +2403,17 @@ class _MainWindowState extends State<MainWindow> {
     final text = _inputController.text.trim();
     final translated = _outputController.text.trim();
     if (text.isEmpty || translated.isEmpty) return;
-    
+
     setState(() {
-      TranslationHistory.toggleSaveForTranslation(text, translated, _srcLang, _tgtLang);
+      TranslationHistory.toggleSaveForTranslation(
+          text, translated, _srcLang, _tgtLang);
     });
-    
+
     final isSaved = _isCurrentResultSaved;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(UiLocalizations.get(isSaved ? 'toast_saved' : 'toast_unsaved', _uiLang)),
+        content: Text(UiLocalizations.get(
+            isSaved ? 'toast_saved' : 'toast_unsaved', _uiLang)),
         duration: const Duration(seconds: 1),
         backgroundColor: isSaved ? _c.statusActive : _c.statusRemoved,
       ),
@@ -1642,27 +2437,37 @@ class _MainWindowState extends State<MainWindow> {
               Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: isTransparent ? _c.bgTertiary.withOpacity(0.3) : _c.bgTertiary,
+                  color: isTransparent
+                      ? _c.bgTertiary.withOpacity(0.3)
+                      : _c.bgTertiary,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isTransparent ? _c.borderDefault.withOpacity(0.08) : _c.borderDefault,
+                    color: isTransparent
+                        ? _c.borderDefault.withOpacity(0.08)
+                        : _c.borderDefault,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildHistorySubTabButton(0, UiLocalizations.get('subtab_all', _uiLang)),
-                    _buildHistorySubTabButton(1, UiLocalizations.get('subtab_saved', _uiLang)),
+                    _buildHistorySubTabButton(
+                        0, UiLocalizations.get('subtab_all', _uiLang)),
+                    _buildHistorySubTabButton(
+                        1, UiLocalizations.get('subtab_saved', _uiLang)),
                   ],
                 ),
               ),
               const Spacer(),
               if (_historySubTabIndex == 0 && filteredRecords.isNotEmpty)
                 TextButton.icon(
-                  icon: Icon(Icons.delete_sweep, size: 16, color: _c.statusRemoved),
+                  icon: Icon(Icons.delete_sweep,
+                      size: 16, color: _c.statusRemoved),
                   label: Text(
                     UiLocalizations.get('clear_history', _uiLang),
-                    style: TextStyle(color: _c.statusRemoved, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: _c.statusRemoved,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
                     showDialog(
@@ -1670,7 +2475,8 @@ class _MainWindowState extends State<MainWindow> {
                       builder: (ctx) => BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                         child: AlertDialog(
-                          title: Text(UiLocalizations.get('clear_history', _uiLang)),
+                          title: Text(
+                              UiLocalizations.get('clear_history', _uiLang)),
                           content: Text(_uiLang == 'VN'
                               ? 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử dịch (giữ lại các bản dịch đã lưu)?'
                               : (_uiLang == 'ENG'
@@ -1679,7 +2485,8 @@ class _MainWindowState extends State<MainWindow> {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(),
-                              child: Text(UiLocalizations.get('proxy_cancel', _uiLang)),
+                              child: Text(
+                                  UiLocalizations.get('proxy_cancel', _uiLang)),
                             ),
                             TextButton(
                               onPressed: () {
@@ -1688,8 +2495,10 @@ class _MainWindowState extends State<MainWindow> {
                                 });
                                 Navigator.of(ctx).pop();
                               },
-                              style: TextButton.styleFrom(foregroundColor: _c.statusRemoved),
-                              child: Text(UiLocalizations.get('clear', _uiLang)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: _c.statusRemoved),
+                              child:
+                                  Text(UiLocalizations.get('clear', _uiLang)),
                             ),
                           ],
                         ),
@@ -1707,7 +2516,9 @@ class _MainWindowState extends State<MainWindow> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _historySubTabIndex == 0 ? Icons.history : Icons.star_outline,
+                          _historySubTabIndex == 0
+                              ? Icons.history
+                              : Icons.star_outline,
                           size: 48,
                           color: _c.textMuted.withOpacity(0.5),
                         ),
@@ -1767,7 +2578,8 @@ class _MainWindowState extends State<MainWindow> {
   }
 
   Widget _buildHistoryRecordCard(TranslationRecord record) {
-    final formattedTime = '${record.timestamp.hour.toString().padLeft(2, '0')}:${record.timestamp.minute.toString().padLeft(2, '0')} ${record.timestamp.day}/${record.timestamp.month}';
+    final formattedTime =
+        '${record.timestamp.hour.toString().padLeft(2, '0')}:${record.timestamp.minute.toString().padLeft(2, '0')} ${record.timestamp.day}/${record.timestamp.month}';
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
@@ -1788,7 +2600,11 @@ class _MainWindowState extends State<MainWindow> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(_uiLang == 'VN' ? 'Đã tải bản dịch từ lịch sử' : (_uiLang == 'ENG' ? 'Loaded translation from history' : '已从历史记录加载翻译')),
+                content: Text(_uiLang == 'VN'
+                    ? 'Đã tải bản dịch từ lịch sử'
+                    : (_uiLang == 'ENG'
+                        ? 'Loaded translation from history'
+                        : '已从历史记录加载翻译')),
                 duration: const Duration(seconds: 1),
               ),
             );
@@ -1798,11 +2614,13 @@ class _MainWindowState extends State<MainWindow> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _c.bgTertiary,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: _c.borderDefault.withOpacity(0.2)),
+                    border:
+                        Border.all(color: _c.borderDefault.withOpacity(0.2)),
                   ),
                   child: Text(
                     '${record.srcLang} ➔ ${record.tgtLang}',
@@ -1861,7 +2679,8 @@ class _MainWindowState extends State<MainWindow> {
                   splashRadius: 16,
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline, size: 18, color: _c.statusRemoved),
+                  icon: Icon(Icons.delete_outline,
+                      size: 18, color: _c.statusRemoved),
                   onPressed: () {
                     setState(() {
                       TranslationHistory.deleteRecord(record.id);

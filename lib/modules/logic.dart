@@ -10,12 +10,16 @@ class TranslateLogic {
   static bool isCached(String text, String sourceLang, String targetLang) {
     return TranslationCache.get(text, sourceLang, targetLang) != null;
   }
+
   /// Converts Chinese characters to Pinyin with tone marks offline
   static String getPinyinOffline(String text) {
     try {
       // Remove any Pinyin label formatting if present in the text to avoid double-processing
-      final targetText = text.replaceAll(RegExp(r'^Pinyin:\s*', caseSensitive: false), '').trim();
-      return PinyinHelper.getPinyin(targetText, separator: ' ', format: PinyinFormat.WITH_TONE_MARK);
+      final targetText = text
+          .replaceAll(RegExp(r'^Pinyin:\s*', caseSensitive: false), '')
+          .trim();
+      return PinyinHelper.getPinyin(targetText,
+          separator: ' ', format: PinyinFormat.WITH_TONE_MARK);
     } catch (_) {
       return '';
     }

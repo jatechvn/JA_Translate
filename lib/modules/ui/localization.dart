@@ -93,6 +93,11 @@ class UiLocalizations {
       'ENG': 'Attach Image',
       'CN': '附加图片',
     },
+    'tooltip_snip': {
+      'VN': 'Chụp màn hình dịch nhanh (Alt + S)',
+      'ENG': 'Screen Snip & Translate (Alt + S)',
+      'CN': '截图快速翻译 (Alt + S)',
+    },
     'tooltip_copy_input': {
       'VN': 'Sao chép bản gốc',
       'ENG': 'Copy Input',
@@ -107,6 +112,21 @@ class UiLocalizations {
       'VN': 'Đổi chiều ngôn ngữ',
       'ENG': 'Swap Languages',
       'CN': '交换语言',
+    },
+    'tooltip_speak': {
+      'VN': 'Nghe phát âm',
+      'ENG': 'Listen to speech',
+      'CN': '朗读发音',
+    },
+    'tooltip_mic': {
+      'VN': 'Nhập bằng giọng nói (Mic)',
+      'ENG': 'Voice Input (Mic)',
+      'CN': '语音输入 (麦克风)',
+    },
+    'mic_recording': {
+      'VN': 'Đang lắng nghe... Bấm để dịch',
+      'ENG': 'Listening... Click to translate',
+      'CN': '正在聆听... 点击翻译',
     },
     'pinyin_label': {
       'VN': 'Phiên âm Pinyin:',
@@ -332,6 +352,181 @@ class UiLocalizations {
       'VN': 'BẢN DỊCH ĐÃ LƯU',
       'ENG': 'SAVED',
       'CN': '已收藏',
+    },
+    'provider_cloud': {
+      'VN': 'CLOUD',
+      'ENG': 'CLOUD',
+      'CN': '云端',
+    },
+    'provider_local': {
+      'VN': 'LOCAL',
+      'ENG': 'LOCAL',
+      'CN': '本地',
+    },
+    'local_ai_title': {
+      'VN': 'Cấu hình Local AI (Embedded llama.cpp)',
+      'ENG': 'Local AI Configuration (llama.cpp)',
+      'CN': '本地 AI 配置 (llama.cpp)',
+    },
+    'local_ai_endpoint': {
+      'VN': 'Địa chỉ API (Endpoint)',
+      'ENG': 'API Endpoint',
+      'CN': '接口地址',
+    },
+    'local_ai_model': {
+      'VN': 'Tên Model Local',
+      'ENG': 'Local Model Name',
+      'CN': '本地模型名称',
+    },
+    'local_ai_test': {
+      'VN': 'Kiểm tra kết nối',
+      'ENG': 'Test Connection',
+      'CN': '测试连接',
+    },
+    'local_ai_connected': {
+      'VN': 'Llama Server đang hoạt động tốt!',
+      'ENG': 'Llama Server is running properly!',
+      'CN': 'Llama 服务运行正常！',
+    },
+    'local_ai_failed': {
+      'VN': 'Llama Server chưa khởi chạy.',
+      'ENG': 'Llama Server is not running.',
+      'CN': 'Llama 服务未运行。',
+    },
+    'cloud_ai_title': {
+      'VN': 'Cấu hình Cloud AI (API Key & Model)',
+      'ENG': 'Cloud AI Configuration (API Key & Model)',
+      'CN': '云端 AI 配置 (API Key 与模型)',
+    },
+    'cloud_api_key': {
+      'VN': 'API Key',
+      'ENG': 'API Key',
+      'CN': 'API 密钥',
+    },
+    'cloud_api_base': {
+      'VN': 'Địa chỉ API (Base URL)',
+      'ENG': 'API Base URL',
+      'CN': 'API 接口地址',
+    },
+    'cloud_text_model': {
+      'VN': 'Model Dịch thuật (Text)',
+      'ENG': 'Text Translation Model',
+      'CN': '文本翻译模型',
+    },
+    'cloud_vision_model': {
+      'VN': 'Model Xử lý ảnh (Vision OCR)',
+      'ENG': 'Vision OCR Model',
+      'CN': '图片识别模型',
+    },
+    'cloud_test': {
+      'VN': 'Kiểm tra kết nối Cloud',
+      'ENG': 'Test Cloud Connection',
+      'CN': '测试云端连接',
+    },
+    'cloud_test_ok': {
+      'VN': 'Kết nối Cloud API thành công!',
+      'ENG': 'Connected to Cloud API successfully!',
+      'CN': '成功连接到云端 API！',
+    },
+    'cloud_test_fail': {
+      'VN': 'Lỗi kết nối Cloud API',
+      'ENG': 'Cloud API connection failed',
+      'CN': '云端 API 连接失败',
+    },
+    'local_installed_models': {
+      'VN': 'Model đã cài đặt trong máy:',
+      'ENG': 'Installed Models on device:',
+      'CN': '本机已安装模型：',
+    },
+    'local_no_models': {
+      'VN': 'Chưa phát hiện model nào. Hãy tải model bên dưới!',
+      'ENG': 'No models found. Download one below!',
+      'CN': '未发现模型，请在下方下载！',
+    },
+    'local_download_btn': {
+      'VN': 'Tải về máy',
+      'ENG': 'Download',
+      'CN': '下载到本机',
+    },
+    'local_download_rec': {
+      'VN': 'Tải Qwen2.5-1.5B (Khuyên dùng Mini PC 8GB RAM)',
+      'ENG': 'Download Qwen2.5-1.5B (Recommended for 8GB RAM)',
+      'CN': '下载 Qwen2.5-1.5B (推荐 8GB 内存配置)',
+    },
+    'local_downloading': {
+      'VN': 'Đang tải model...',
+      'ENG': 'Downloading model...',
+      'CN': '正在下载模型...',
+    },
+    'local_download_success': {
+      'VN': 'Tải model thành công!',
+      'ENG': 'Model downloaded successfully!',
+      'CN': '模型下载成功！',
+    },
+    'local_download_fail': {
+      'VN': 'Tải model thất bại',
+      'ENG': 'Model download failed',
+      'CN': '模型下载失败',
+    },
+    'menu_config_cloud': {
+      'VN': 'Cấu hình Cloud AI (NVIDIA / OpenAI)',
+      'ENG': 'Cloud AI Settings (NVIDIA / OpenAI)',
+      'CN': '云端 AI 设置 (NVIDIA / OpenAI)',
+    },
+    'menu_config_local': {
+      'VN': 'Cấu hình Local AI & Tự tải Model',
+      'ENG': 'Local AI Settings & Model Downloader',
+      'CN': '本地 AI 设置与模型下载',
+    },
+    'local_engine_title': {
+      'VN': 'Bộ máy AI Local',
+      'ENG': 'Local AI Engine',
+      'CN': '本地 AI 引擎',
+    },
+    'local_engine_embedded': {
+      'VN': 'Embedded llama.cpp (Thư mục App - Tối ưu nhất)',
+      'ENG': 'Embedded llama.cpp (App Folder - Optimized)',
+      'CN': '内置 llama.cpp (程序目录 - 最优)',
+    },
+    'local_models_folder': {
+      'VN': 'Thư mục Models (Lưu ngay trong App):',
+      'ENG': 'Models Directory (Inside App):',
+      'CN': '模型目录 (程序内部):',
+    },
+    'local_open_folder': {
+      'VN': 'Mở thư mục Models',
+      'ENG': 'Open Models Folder',
+      'CN': '打开模型目录',
+    },
+    'local_server_status': {
+      'VN': 'Trạng thái Server:',
+      'ENG': 'Server Status:',
+      'CN': '服务状态：',
+    },
+    'local_server_running': {
+      'VN': 'Đang chạy (Cổng 8080)',
+      'ENG': 'Running (Port 8080)',
+      'CN': '运行中 (端口 8080)',
+    },
+    'local_server_stopped': {
+      'VN': 'Đã dừng',
+      'ENG': 'Stopped',
+      'CN': '已停止',
+    },
+    'local_threads_label': {
+      'VN': 'Số luồng CPU (Threads):',
+      'ENG': 'CPU Threads:',
+      'CN': 'CPU 线程数：',
+    },
+    'local_start_server': {
+      'VN': 'Khởi động',
+      'ENG': 'Start',
+      'CN': '启动',
+    },
+    'local_stop_server': {
+      'VN': 'Dừng',
+      'ENG': 'Stop',
+      'CN': '停止',
     },
   };
 

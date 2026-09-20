@@ -18,12 +18,14 @@ void setupLogger() {
 
   // Daily log file
   final now = DateTime.now();
-  final logFileName = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}.log';
+  final logFileName =
+      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}.log';
   final logFile = File(p.join(logDir.path, logFileName));
   _logFileSink = logFile.openWrite(mode: FileMode.append);
 
   Logger.root.onRecord.listen((record) {
-    final message = '[${record.time}] ${record.level.name}: ${record.loggerName} - ${record.message}';
+    final message =
+        '[${record.time}] ${record.level.name}: ${record.loggerName} - ${record.message}';
     // Console output
     // ignore: avoid_print
     print(message);

@@ -1,4 +1,4 @@
-﻿// lib/modules/translation_history.dart
+// lib/modules/translation_history.dart
 // Manage translation history and starred items with local JSON database
 
 import 'dart:convert';
@@ -56,7 +56,8 @@ class TranslationHistory {
   static void initialize() {
     try {
       if (kDebugMode) {
-        _historyPath = p.join(Directory.current.path, 'translation_history.json');
+        _historyPath =
+            p.join(Directory.current.path, 'translation_history.json');
       } else {
         final exeDir = p.dirname(Platform.resolvedExecutable);
         _historyPath = p.join(exeDir, 'translation_history.json');
@@ -96,14 +97,14 @@ class TranslationHistory {
   }
 
   /// Add a translation entry to history.
-  static void addRecord(String text, String translated, String srcLang, String tgtLang, {bool isSaved = false}) {
+  static void addRecord(
+      String text, String translated, String srcLang, String tgtLang,
+      {bool isSaved = false}) {
     if (text.trim().isEmpty || translated.trim().isEmpty) return;
-    
+
     // Check if duplicate exists (same text, languages)
-    final existingIdx = records.indexWhere((r) =>
-        r.text == text &&
-        r.srcLang == srcLang &&
-        r.tgtLang == tgtLang);
+    final existingIdx = records.indexWhere(
+        (r) => r.text == text && r.srcLang == srcLang && r.tgtLang == tgtLang);
 
     if (existingIdx != -1) {
       // Update timestamp and optionally isSaved flag, then move to top
@@ -157,7 +158,8 @@ class TranslationHistory {
   }
 
   /// Check if a translation is marked as saved.
-  static bool isSaved(String text, String translated, String srcLang, String tgtLang) {
+  static bool isSaved(
+      String text, String translated, String srcLang, String tgtLang) {
     return records.any((r) =>
         r.text == text &&
         r.translated == translated &&
@@ -176,7 +178,8 @@ class TranslationHistory {
   }
 
   /// Toggle save status of a translation directly.
-  static void toggleSaveForTranslation(String text, String translated, String srcLang, String tgtLang) {
+  static void toggleSaveForTranslation(
+      String text, String translated, String srcLang, String tgtLang) {
     final idx = records.indexWhere((r) =>
         r.text == text &&
         r.translated == translated &&
