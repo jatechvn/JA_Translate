@@ -68,6 +68,8 @@ class LlamaService {
 
   Process? _serverProcess;
   bool _isStarting = false;
+  String? lastStartError;
+  bool get isRunning => _serverProcess != null;
 
   /// Resolve path to the app's models/ directory
   static String getModelsDirectory() {
@@ -75,7 +77,9 @@ class LlamaService {
     try {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       final distModels = '$exeDir/models';
-      if (Directory(distModels).existsSync()) return distModels;
+      if (Directory(distModels).existsSync()) {
+        return Directory(distModels).absolute.path;
+      }
     } catch (_) {}
 
     // 2. Check project root (dev)
@@ -85,7 +89,11 @@ class LlamaService {
         Directory(devModels).createSync(recursive: true);
       } catch (_) {}
     }
-    return devModels;
+    return Directory(devModels).absolute.path;
+  }
+
+  static Future<void> reconcileLocalConfiguration() async {
+    await AppConfig.reconcileAvailableModels(getInstalledGgufModels());
   }
 
   /// Resolve path to bin/llama-server.exe
@@ -93,11 +101,11 @@ class LlamaService {
     try {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
       final distServer = '$exeDir/bin/llama-server.exe';
-      if (File(distServer).existsSync()) return distServer;
+      if (File(distServer).existsSync()) return File(distServer).absolute.path;
     } catch (_) {}
 
     const devServer = 'bin/llama-server.exe';
-    if (File(devServer).existsSync()) return devServer;
+    if (File(devServer).existsSync()) return File(devServer).absolute.path;
 
     return null;
   }
@@ -164,10 +172,12 @@ class LlamaService {
     if (await isServerRunning(port: port)) return true;
     if (_isStarting) return false;
     _isStarting = true;
+    lastStartError = null;
 
     final serverExe = getLlamaServerExecutable();
     if (serverExe == null) {
-      debugPrint('llama-server.exe not found in bin/');
+      lastStartError = 'llama-server.exe not found in bin/';
+      debugPrint(lastStartError);
       _isStarting = false;
       return false;
     }
@@ -176,10 +186,11 @@ class LlamaService {
     final modelName = modelFileName ??
         AppConfig.get('LOCAL_AI', 'gguf_model',
             defaultValue: 'qwen2.5-1.5b-instruct-q4_k_m.gguf');
-    final modelPath = '$modelsDir/$modelName';
+    final modelPath = File('$modelsDir/$modelName').absolute.path;
 
     if (!File(modelPath).existsSync()) {
-      debugPrint('Model file does not exist: $modelPath');
+      lastStartError = 'Model file does not exist: $modelPath';
+      debugPrint(lastStartError);
       _isStarting = false;
       return false;
     }
@@ -227,8 +238,8 @@ class LlamaService {
         mode: ProcessStartMode.detached,
       );
 
-      // Wait up to 10 seconds for server to be healthy
-      for (var i = 0; i < 20; i++) {
+      // Large GGUF models can take longer than 10 seconds to load.
+      for (var i = 0; i < 120; i++) {
         await Future.delayed(const Duration(milliseconds: 500));
         if (await isServerRunning(port: port)) {
           _isStarting = false;
@@ -236,11 +247,16 @@ class LlamaService {
         }
       }
     } catch (e) {
+      lastStartError = e.toString();
       debugPrint('Failed to start llama-server: $e');
     }
 
     _isStarting = false;
-    return await isServerRunning(port: port);
+    final healthy = await isServerRunning(port: port);
+    if (!healthy) {
+      lastStartError ??= 'llama-server did not become healthy on port $port';
+    }
+    return healthy;
   }
 
   /// Stop running llama-server

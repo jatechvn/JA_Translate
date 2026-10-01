@@ -29,18 +29,22 @@ New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 Write-Host "Copying Release binary files..."
 Copy-Item -Path (Join-Path $rel "*") -Destination $targetDir -Recurse -Force
 
-Write-Host "Copying documentation and configurations..."
-$docs = @("config.ini", "README.md", "CHANGELOG.md", "USERGUIDE.md", "RELEASE_NOTES.md", "ABOUT.txt")
+Write-Host "Copying documentation, configurations, and installer suite..."
+$docs = @("config.ini", "update_config.json", "install.bat", "uninstall.bat", "uninstall.ps1", "README.md", "CHANGELOG.md", "USERGUIDE.md", "RELEASE_NOTES.md", "ABOUT.txt")
 foreach ($doc in $docs) {
     $src = Join-Path $root $doc
     if (Test-Path $src) {
         Copy-Item -Path $src -Destination (Join-Path $targetDir $doc) -Force
+        # Also copy installer scripts to dist root for convenience
+        if ($doc -in @("install.bat", "uninstall.bat", "uninstall.ps1")) {
+            Copy-Item -Path $src -Destination (Join-Path $dist $doc) -Force
+        }
     }
 }
 
 Write-Host "Copying bin directory (llama-server and runtime DLLs)..."
 $binPath = Join-Path $root "bin"
-if (Test-Path $binPath) {
+if ((Test-Path $binPath) -and -not (Test-Path (Join-Path $root "native/runtime/gguf/ja_gguf.dll"))) {
     Copy-Item -Path $binPath -Destination $targetDir -Recurse -Force
 }
 
@@ -50,7 +54,7 @@ if (-not (Test-Path $targetModels)) {
     New-Item -ItemType Directory -Path $targetModels -Force | Out-Null
 }
 $devModels = Join-Path $root "models"
-if (Test-Path $devModels) {
+if ((Test-Path $devModels) -and -not (Test-Path (Join-Path $root "native/runtime/gguf/ja_gguf.dll"))) {
     Get-ChildItem -Path $devModels -Filter "*.gguf" | ForEach-Object {
         Copy-Item -Path $_.FullName -Destination $targetModels -Force
     }

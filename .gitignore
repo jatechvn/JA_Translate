@@ -90,6 +90,13 @@ linux/flutter/ephemeral/
 # Editor / OS
 .vscode/
 Thumbs.db
+*.lnk
 
 # Tooling
 .claude/
+
+# Isolated native AI build tools and downloaded source
+.local_ai_tools/
+
+# Generated embedded inference binaries
+native/runtime/

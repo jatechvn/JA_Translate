@@ -1,136 +1,138 @@
-// lib/main.dart
-// Program entry point for JA Translate
-// Transparent blur window with Light/Dark/Auto theme
-
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:provider/provider.dart';
+
+import 'theme/theme_provider.dart';
+import 'theme/language_provider.dart';
+import 'layout/dashboard_shell.dart';
+import 'widgets/command_palette.dart';
+import 'widgets/app_toast.dart';
 import 'modules/constants.dart';
 import 'modules/logger_config.dart';
 import 'modules/app_config.dart';
+import 'modules/llama_service.dart';
+import 'modules/local_translation_service.dart';
 import 'modules/translation_cache.dart';
 import 'modules/translation_history.dart';
-import 'modules/ui/styles.dart';
-import 'modules/ui/main_window.dart';
+import 'modules/desktop_service.dart';
+import 'modules/window_helper.dart';
 
-void main() async {
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize logging configuration
+  // Setup diagnostic logger
   setupLogger();
 
-  // Load config.ini settings
+  // Load config.ini
   await AppConfig.initialize();
+  await LocalTranslationService.reconcileConfiguration();
+  if (!['opus_mt', 'gguf_native'].contains(AppConfig.localEngine)) {
+    await LlamaService.reconcileLocalConfiguration();
+  }
 
-  // Initialize translation cache
+  // Initialize translation cache & history
   TranslationCache.initialize();
-
-  // Initialize translation history
   TranslationHistory.initialize();
 
-  // Initialize window manager
-  await windowManager.ensureInitialized();
-
-  // Initialize transparent blur core
-  await Window.initialize();
-
-  // Configure window options
-  const windowOptions = WindowOptions(
-    size: Size(1000, 750),
-    minimumSize: Size(960, 540),
+  // Initialize Windows desktop glass window
+  await initGlassWindow(
     title: '$appName  v$appVersion',
-    backgroundColor: Colors.transparent,
-    titleBarStyle: TitleBarStyle.normal,
+    size: const Size(1200, 820),
+    minSize: const Size(800, 560),
   );
 
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-    try {
-      await windowManager.setAlignment(Alignment.center);
-    } catch (_) {}
-  });
+  // Initialize desktop system tray and global hotkeys
+  DesktopService().initialize(
+    onQuickTranslate: () {},
+    onScreenSnip: () {},
+  );
 
-  // Apply acrylic / mica transparent background blur
-  if (AppConfig.enableTransparency) {
-    try {
-      await Window.setEffect(
-        effect: WindowEffect.acrylic,
-        color: const Color(0x00000000), // fully transparent base
-      );
-    } catch (_) {
-      try {
-        await Window.setEffect(
-          effect: WindowEffect.mica,
-          color: const Color(0x00000000),
-        );
-      } catch (_) {}
-    }
-  } else {
-    try {
-      await Window.setEffect(
-        effect: WindowEffect.disabled,
-      );
-    } catch (_) {}
-  }
-
-  // Restore saved theme
-  final savedThemeStr =
-      AppConfig.get('SETTINGS', 'theme', defaultValue: 'dark');
-  final savedThemeMode = AppThemeModeExt.fromCode(savedThemeStr);
-
-  runApp(JaTranslateApp(
-    initialThemeMode: savedThemeMode,
-  ));
+  runApp(const JaTranslateApp());
 }
 
-class JaTranslateApp extends StatefulWidget {
-  final AppThemeMode initialThemeMode;
-
-  const JaTranslateApp({
-    super.key,
-    required this.initialThemeMode,
-  });
-
-  @override
-  State<JaTranslateApp> createState() => _JaTranslateAppState();
-}
-
-class _JaTranslateAppState extends State<JaTranslateApp> {
-  late final ThemeNotifier _themeNotifier;
-
-  @override
-  void initState() {
-    super.initState();
-    final platformBrightness =
-        WidgetsBinding.instance.platformDispatcher.platformBrightness;
-    _themeNotifier = ThemeNotifier(widget.initialThemeMode, platformBrightness);
-  }
-
-  @override
-  void dispose() {
-    _themeNotifier.dispose();
-    disposeLogger();
-    super.dispose();
-  }
+class JaTranslateApp extends StatelessWidget {
+  const JaTranslateApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _themeNotifier,
-      builder: (context, _) {
-        return MaterialApp(
-          title: '$appName  v$appVersion',
-          debugShowCheckedModeBanner: false,
-          theme: buildThemeData(_themeNotifier.colors),
-          home: ThemeReveal(
-            themeNotifier: _themeNotifier,
-            child: MainWindow(
-              themeNotifier: _themeNotifier,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+      ],
+      child: const _AppContent(),
+    );
+  }
+}
+
+class _AppContent extends StatelessWidget {
+  const _AppContent();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    final colors = theme.colors;
+    final effectiveTitle = (!kIsWeb && Platform.isWindows && !theme.isWin11)
+        ? ''
+        : '$appName  v$appVersion';
+
+    return MaterialApp(
+      title: effectiveTitle,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: theme.isDark ? Brightness.dark : Brightness.light,
+        scaffoldBackgroundColor: Colors.transparent,
+      ),
+      home: Builder(
+        builder: (ctx) {
+          return CommandPaletteShortcut(
+            items: () => [
+              CommandPaletteItem(
+                label: 'Chuyển Theme Sáng / Tối',
+                subtitle: 'Đổi chế độ giao diện 1-Click (Shift+L)',
+                icon: Icons.brightness_4_rounded,
+                onSelect: () => theme.toggleTheme(),
+              ),
+              CommandPaletteItem(
+                label: 'Khôi phục Glass Tuning',
+                subtitle: 'Đặt lại Blur và Opacity về chuẩn mặc định',
+                icon: Icons.refresh_rounded,
+                onSelect: () {
+                  theme.resetToDefaults();
+                  showAppToast(
+                    ctx,
+                    colors: colors,
+                    message: 'Đã khôi phục Glass Tuning chuẩn Bento!',
+                    icon: Icons.check_circle_rounded,
+                    accentColor: colors.accentCyan,
+                  );
+                },
+              ),
+              CommandPaletteItem(
+                label: 'Xóa bộ nhớ đệm dịch thuật',
+                subtitle: 'Giải phóng RAM và làm mới Translation Cache',
+                icon: Icons.cleaning_services_rounded,
+                onSelect: () {
+                  TranslationCache.clear();
+                  showAppToast(
+                    ctx,
+                    colors: colors,
+                    message: 'Đã xóa bộ nhớ đệm dịch thuật!',
+                    icon: Icons.check_circle_rounded,
+                    accentColor: colors.accentEmerald,
+                  );
+                },
+              ),
+            ],
+            child: const DashboardShell(
+              appTitle: appName,
+              appVersion: appVersion,
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

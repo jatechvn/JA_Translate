@@ -19,6 +19,9 @@ import 'styles.dart';
 import 'dialogs.dart';
 import 'localization.dart';
 import '../translation_history.dart';
+import '../ota_update_service.dart';
+import 'glass_update_dialog.dart';
+import 'ota_settings_dialog.dart';
 
 class MainWindow extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -70,6 +73,10 @@ class _MainWindowState extends State<MainWindow> {
   int _historySubTabIndex = 0; // 0 for All, 1 for Saved
   bool _isConfigPromptOpen = false;
 
+  // LAN OTA update state
+  bool _hasPendingOtaUpdate = false;
+  UpdatePackageInfo? _pendingOtaPackage;
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +91,41 @@ class _MainWindowState extends State<MainWindow> {
       },
       onScreenSnip: _triggerScreenSnip,
     );
+
+    // Check for LAN OTA updates on startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOtaOnStartup();
+    });
+  }
+
+  Future<void> _checkOtaOnStartup() async {
+    try {
+      final service = OtaUpdateService();
+      final config = await service.loadConfig();
+      if (!service.shouldCheckForUpdates(
+        interval: config.checkInterval,
+        lastCheckTime: config.lastCheckTime,
+      )) {
+        return;
+      }
+
+      final result = await service.checkForUpdates();
+      if (mounted && result.hasUpdate && result.packageInfo != null) {
+        setState(() {
+          _hasPendingOtaUpdate = true;
+          _pendingOtaPackage = result.packageInfo;
+        });
+
+        // Show glass update dialog automatically
+        await showGlassUpdateDialog(
+          context: context,
+          packageInfo: result.packageInfo!,
+          uiLang: _uiLang,
+        );
+      }
+    } catch (e) {
+      debugPrint('[MainWindow] Startup OTA check error: $e');
+    }
   }
 
   @override
@@ -767,6 +809,59 @@ class _MainWindowState extends State<MainWindow> {
             },
           ),
           const SizedBox(width: 8),
+          // LAN OTA Update Button (Expanding Emerald Badge when update is ready)
+          if (_hasPendingOtaUpdate && _pendingOtaPackage != null)
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: _c.statusActive,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.rocket_launch_rounded, size: 14),
+              label: Text(
+                '${UiLocalizations.get('ota_btn', _uiLang)} ${_pendingOtaPackage!.version.displayVersion}',
+                style:
+                    const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                showGlassUpdateDialog(
+                  context: context,
+                  packageInfo: _pendingOtaPackage!,
+                  uiLang: _uiLang,
+                );
+              },
+            )
+          else
+            Tooltip(
+              message: UiLocalizations.get('ota_title', _uiLang),
+              child: TextButton.icon(
+                icon: Icon(Icons.system_update_alt,
+                    size: 16, color: _c.textPrimary),
+                label: Text(
+                  UiLocalizations.get('ota_btn', _uiLang),
+                  style: TextStyle(
+                    color: _c.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onPressed: () {
+                  showOtaSettingsDialog(
+                    context: context,
+                    uiLang: _uiLang,
+                  ).then((updated) {
+                    if (updated == true && mounted) {
+                      setState(() {});
+                    }
+                  });
+                },
+              ),
+            ),
+          const SizedBox(width: 8),
           // Theme toggle button
           TextButton.icon(
             key: _themeButtonKey,
@@ -1145,63 +1240,69 @@ class _MainWindowState extends State<MainWindow> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
-            onTap: () async {
-              final newMode = isLocal ? 'cloud' : 'local';
-              await AppConfig.setActiveProvider(newMode);
-              final activeModel = newMode == 'local' ? localModel : cloudModel;
-              setState(() {
-                _status = newMode == 'local'
-                    ? 'LOCAL: $activeModel'
-                    : 'CLOUD: $activeModel';
-              });
+          Tooltip(
+            message: isLocal
+                ? 'Model cục bộ: $localModel (Nhấp để chuyển Cloud AI)'
+                : 'Model đám mây: $cloudModel (Nhấp để chuyển Local AI)',
+            child: InkWell(
+              onTap: () async {
+                final newMode = isLocal ? 'cloud' : 'local';
+                await AppConfig.setActiveProvider(newMode);
+                final activeModel =
+                    newMode == 'local' ? localModel : cloudModel;
+                setState(() {
+                  _status = newMode == 'local'
+                      ? 'LOCAL: $activeModel'
+                      : 'CLOUD: $activeModel';
+                });
 
-              if (newMode == 'local') {
-                final models = await ApiClient.getInstalledLocalModels();
-                final hasModel = models.any((m) =>
-                    m.toLowerCase() == rawLocal.toLowerCase() ||
-                    m.toLowerCase().contains(rawLocal.toLowerCase()));
-                if (!hasModel && mounted) {
-                  _showMissingLocalModelPopup();
+                if (newMode == 'local') {
+                  final models = await ApiClient.getInstalledLocalModels();
+                  final hasModel = models.any((m) =>
+                      m.toLowerCase() == rawLocal.toLowerCase() ||
+                      m.toLowerCase().contains(rawLocal.toLowerCase()));
+                  if (!hasModel && mounted) {
+                    _showMissingLocalModelPopup();
+                  } else {
+                    final isAlive = await ApiClient.checkLocalAiHealth();
+                    if (!isAlive) {
+                      await ApiClient.ensureLocalAiRunning();
+                    }
+                  }
                 } else {
-                  final isAlive = await ApiClient.checkLocalAiHealth();
-                  if (!isAlive) {
-                    await ApiClient.ensureLocalAiRunning();
+                  final apiKey = AppConfig.get('NVIDIA', 'api_key').trim();
+                  if (apiKey.isEmpty && mounted) {
+                    _showMissingCloudConfigPopup();
                   }
                 }
-              } else {
-                final apiKey = AppConfig.get('NVIDIA', 'api_key').trim();
-                if (apiKey.isEmpty && mounted) {
-                  _showMissingCloudConfigPopup();
-                }
-              }
-            },
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isLocal
-                    ? _c.targetAccent.withOpacity(0.18)
-                    : _c.linkAccent.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isLocal ? Icons.computer : Icons.cloud_outlined,
-                    size: 14,
-                    color: isLocal ? _c.targetAccent : _c.linkAccent,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    isLocal ? 'LOCAL ($localModel)' : 'CLOUD ($cloudModel)',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isLocal
+                      ? _c.targetAccent.withOpacity(0.18)
+                      : _c.linkAccent.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isLocal ? Icons.computer : Icons.cloud_outlined,
+                      size: 14,
                       color: isLocal ? _c.targetAccent : _c.linkAccent,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 5),
+                    Text(
+                      isLocal ? 'LOCAL AI' : 'CLOUD AI',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isLocal ? _c.targetAccent : _c.linkAccent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1426,8 +1527,6 @@ class _MainWindowState extends State<MainWindow> {
     required bool isInput,
     List<Widget> actions = const [],
   }) {
-    final isTransparent = AppConfig.enableTransparency;
-
     // Convert actions to compact size for header integration
     final List<Widget> compactActions = actions.map((a) {
       if (a is IconButton) {
@@ -1476,18 +1575,10 @@ class _MainWindowState extends State<MainWindow> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: readOnly
-                        ? (isTransparent
-                            ? _c.bgSecondary.withOpacity(0.15)
-                            : _c.bgSecondary)
-                        : (isTransparent
-                            ? _c.bgSecondary.withOpacity(0.3)
-                            : _c.bgSecondary),
+                    color: readOnly ? _c.bgCard.withOpacity(0.85) : _c.bgCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isTransparent
-                          ? _c.borderDefault.withOpacity(0.12)
-                          : _c.borderDefault,
+                      color: _c.borderDefault.withOpacity(0.35),
                     ),
                   ),
                   padding: EdgeInsets.only(
@@ -2293,31 +2384,6 @@ class _MainWindowState extends State<MainWindow> {
                                     ),
                                   ],
                                 ],
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Tooltip(
-                              message: 'Switch UI Language',
-                              child: TextButton.icon(
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                icon: Icon(Icons.language,
-                                    size: 14,
-                                    color: _c.textPrimary.withOpacity(0.6)),
-                                label: Text(
-                                  _uiLang.toUpperCase(),
-                                  style: TextStyle(
-                                    color: _c.textPrimary.withOpacity(0.6),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                onPressed: _toggleUiLang,
                               ),
                             ),
                           ],

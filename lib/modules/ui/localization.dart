@@ -3,6 +3,52 @@
 
 class UiLocalizations {
   static const Map<String, Map<String, String>> _values = {
+    'engine_missing_native': {
+      'VN': 'Thiếu thư viện dịch native.',
+      'ENG': 'Native translation libraries are missing.',
+      'CN': '缺少本地翻译库。'
+    },
+    'engine_missing_translation_pack': {
+      'VN': 'Thiếu gói dịch cho cặp ngôn ngữ đã chọn.',
+      'ENG': 'Translation pack missing for the selected languages.',
+      'CN': '缺少所选语言的翻译模型。'
+    },
+    'ai_native_description': {
+      'VN':
+          'Dịch trực tiếp trong app, không cần server. Chỉ nạp một gói dịch vào RAM mỗi lần.',
+      'ENG':
+          'Translate inside the app without a server. Only one translation pack is loaded at a time.',
+      'CN': '直接在应用中翻译，无需服务器。每次仅加载一个翻译模型。'
+    },
+    'ai_native_loaded': {'VN': 'Đã nạp', 'ENG': 'Loaded', 'CN': '已加载'},
+    'ai_native_auto_load': {
+      'VN': 'Tự nạp gói phù hợp khi bắt đầu dịch.',
+      'ENG': 'The matching pack loads automatically when translation starts.',
+      'CN': '开始翻译时自动加载对应模型。'
+    },
+    'ai_native_load': {'VN': 'Nạp model', 'ENG': 'Load model', 'CN': '加载模型'},
+    'ai_native_unload': {
+      'VN': 'Giải phóng RAM',
+      'ENG': 'Free memory',
+      'CN': '释放内存'
+    },
+    'ai_native_folder': {
+      'VN': 'Thư mục gói dịch',
+      'ENG': 'Translation packs folder',
+      'CN': '翻译模型文件夹'
+    },
+    'ai_native_error': {
+      'VN': 'Lỗi engine dịch',
+      'ENG': 'Translation engine error',
+      'CN': '翻译引擎错误'
+    },
+    'ai_native_pivot': {
+      'VN':
+          'VI ↔ ZH dịch qua tiếng Anh. Tự nhận diện dựa trên ký tự; tiếng Việt không dấu nên chọn nguồn thủ công.',
+      'ENG':
+          'VI ↔ ZH translates through English. Detection uses characters; select Vietnamese manually for text without accents.',
+      'CN': '越南语 ↔ 中文通过英语翻译。自动检测依赖字符；无声调越南语请手动选择。'
+    },
     'source': {
       'VN': 'NGUỒN',
       'ENG': 'SOURCE',
@@ -527,6 +573,163 @@ class UiLocalizations {
       'VN': 'Dừng',
       'ENG': 'Stop',
       'CN': '停止',
+    },
+    'ota_btn': {
+      'VN': 'CẬP NHẬT',
+      'ENG': 'UPDATE',
+      'CN': '更新',
+    },
+    'ota_title': {
+      'VN': 'CẬP NHẬT OTA NỘI BỘ',
+      'ENG': 'LAN OTA UPDATE',
+      'CN': '局域网 OTA 更新',
+    },
+    'ota_dialog_title': {
+      'VN': 'Cập Nhật Phiên Bản Mới',
+      'ENG': 'Software Update',
+      'CN': '软件更新',
+    },
+    'ota_server_path': {
+      'VN': 'Đường dẫn máy chủ (SMB / UNC):',
+      'ENG': 'Update Server Path (SMB / UNC):',
+      'CN': '更新服务器路径 (SMB / UNC)：',
+    },
+    'ota_server_path_hint': {
+      'VN': r'\\10.81.141.226\temp\FBT\JA_PROJECT\JA_Update\JA_Translate',
+      'ENG': r'\\10.81.141.226\temp\FBT\JA_PROJECT\JA_Update\JA_Translate',
+      'CN': r'\\10.81.141.226\temp\FBT\JA_PROJECT\JA_Update\JA_Translate',
+    },
+    'ota_username': {
+      'VN': 'Tên đăng nhập SMB (nếu có):',
+      'ENG': 'SMB Username (optional):',
+      'CN': 'SMB 用户名 (可选)：',
+    },
+    'ota_password': {
+      'VN': 'Mật khẩu SMB (nếu có):',
+      'ENG': 'SMB Password (optional):',
+      'CN': 'SMB 密码 (可选)：',
+    },
+    'ota_interval': {
+      'VN': 'Chu kỳ tự động kiểm tra:',
+      'ENG': 'Auto-check Interval:',
+      'CN': '自动检查周期：',
+    },
+    'ota_interval_daily': {
+      'VN': 'Hàng ngày',
+      'ENG': 'Daily',
+      'CN': '每天',
+    },
+    'ota_interval_weekly': {
+      'VN': 'Hàng tuần',
+      'ENG': 'Weekly',
+      'CN': '每周',
+    },
+    'ota_interval_monthly': {
+      'VN': 'Hàng tháng',
+      'ENG': 'Monthly',
+      'CN': '每月',
+    },
+    'ota_interval_off': {
+      'VN': 'Tắt',
+      'ENG': 'Off',
+      'CN': '关闭',
+    },
+    'ota_check_now': {
+      'VN': 'Kiểm tra bản cập nhật ngay',
+      'ENG': 'Check for Updates Now',
+      'CN': '立即检查更新',
+    },
+    'ota_checking': {
+      'VN': 'Đang kiểm tra máy chủ...',
+      'ENG': 'Checking update server...',
+      'CN': '正在检查更新服务器...',
+    },
+    'ota_up_to_date': {
+      'VN': 'Bạn đang sử dụng phiên bản mới nhất!',
+      'ENG': 'You are using the latest version!',
+      'CN': '您已使用最新版本！',
+    },
+    'ota_update_available': {
+      'VN': 'Đã phát hiện phiên bản mới',
+      'ENG': 'New version is available',
+      'CN': '发现新版本',
+    },
+    'ota_current_version': {
+      'VN': 'Phiên bản hiện tại:',
+      'ENG': 'Current Version:',
+      'CN': '当前版本：',
+    },
+    'ota_latest_version': {
+      'VN': 'Phiên bản mới nhất:',
+      'ENG': 'Latest Version:',
+      'CN': '最新版本：',
+    },
+    'ota_release_notes': {
+      'VN': 'Nhật ký thay đổi:',
+      'ENG': 'Release Notes:',
+      'CN': '更新日志：',
+    },
+    'ota_update_later': {
+      'VN': 'Để sau',
+      'ENG': 'Later',
+      'CN': '稍后',
+    },
+    'ota_update_now': {
+      'VN': 'Cập nhật ngay',
+      'ENG': 'Update Now',
+      'CN': '立即更新',
+    },
+    'ota_downloading': {
+      'VN': 'Đang tải bản cập nhật...',
+      'ENG': 'Downloading update...',
+      'CN': '正在下载更新...',
+    },
+    'ota_save': {
+      'VN': 'Lưu Cấu Hình',
+      'ENG': 'Save Config',
+      'CN': '保存配置',
+    },
+    'ota_saved_success': {
+      'VN': 'Đã lưu cấu hình OTA thành công!',
+      'ENG': 'OTA configuration saved!',
+      'CN': 'OTA 配置已保存！',
+    },
+    'ota_error_prefix': {
+      'VN': 'Lỗi kiểm tra cập nhật:',
+      'ENG': 'Update check failed:',
+      'CN': '检查更新失败：',
+    },
+    'ota_default_release_notes': {
+      'VN':
+          'Bản phát hành bao gồm các cải tiến hiệu năng, tính năng mới và các bản vá lỗi.',
+      'ENG':
+          'This release includes performance improvements, new features, and bug fixes.',
+      'CN': '此版本包含性能改进、新功能和错误修复。',
+    },
+    'ota_test_connection': {
+      'VN': 'Kiểm tra kết nối',
+      'ENG': 'Test Connection',
+      'CN': '测试连接',
+    },
+    'ota_open_config_folder': {
+      'VN': 'Mở thư mục cấu hình',
+      'ENG': 'Open Config Folder',
+      'CN': '打开配置目录',
+    },
+    'ota_testing_connection': {
+      'VN': 'Đang kiểm tra kết nối...',
+      'ENG': 'Testing connection...',
+      'CN': '正在测试连接...',
+    },
+    'ota_connection_success': {
+      'VN': 'Kết nối máy chủ thành công!',
+      'ENG': 'Server connection successful!',
+      'CN': '服务器连接成功！',
+    },
+    'ota_connection_failed': {
+      'VN': 'Không thể kết nối máy chủ',
+      'ENG': 'Failed to connect to server',
+      'CN': '无法连接到服务器',
     },
   };
 

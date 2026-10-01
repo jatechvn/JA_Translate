@@ -1,6 +1,6 @@
 # JA Translate
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
 [![Flutter](https://img.shields.io/badge/flutter-3.x-teal.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg)](https://github.com/jatechvn/JA_Translate)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](ABOUT.txt)
@@ -11,30 +11,32 @@
 
 ## ✨ Tính năng nổi bật
 
+- 💎 **Fluent Frosted Glass Bento UI:** Thiết kế hiện đại chuẩn phong cách Bento Grid từ `flutter_ui_template`, nền kính sữa mờ cao cấp chống chói, tối ưu WCAG AAA và hỗ trợ hiệu ứng DWM Aero / Acrylic native.
+- 🔄 **1-Tap Quick AI Engine Switcher:** Hoán đổi tức thì giữa Local AI (Qwen GGUF Offline) và Cloud AI (NVIDIA NIM Gateway) ngay từ thanh tiêu đề.
 - ⚡ **Offline Local AI Engine:** Tích hợp backend `llama-server` chạy mô hình Qwen 2.5 1.5B Instruct siêu nhẹ, dịch ngoại tuyến 100% riêng tư không cần Internet.
+- 🔒 **Bảo toàn trạng thái Tab (Tab State Preservation):** Giữ nguyên văn bản, dữ liệu dịch và con trỏ khi chuyển qua lại giữa các màn hình nhờ kiến trúc `IndexedStack`.
 - 📥 **Tự động tải Model trực tiếp:** Hộp thoại tải mô hình GGUF trực tiếp vào thư mục app với tiến trình % thời gian thực.
 - 📸 **Screen Snip & Vision OCR:** Chụp màn hình nhanh bằng phím tắt Windows `Win + Shift + S` và nhận diện chữ tự động bằng Tesseract OCR kết hợp Vision AI.
 - 🀄 **Phiên âm Pinyin thông minh:** Chuyển đổi chữ Hán sang Pinyin chuẩn kèm thanh điệu phục vụ học tập và dịch thuật chuyên sâu.
-- 💎 **Fluent Glassmorphism UI:** Thiết kế hiện đại chuẩn phong cách JA-Tech Design System, hỗ trợ Dark Mode và hiệu ứng Mica/Acrylic.
 - 🚀 **Portable & Sạch sẽ:** Không cần cài đặt rườm rà, giải nén và chạy ngay lập tức.
 
 ---
 
 ## 🚀 Cài đặt nhanh
 
-1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.1.0_Windows_x64.zip`.
+1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.0_Windows_x64.zip`.
 2. Giải nén file `.zip` vào thư mục bất kỳ.
 3. Chạy file `ja_translate.exe` để bắt đầu sử dụng.
 
 ---
 
-## 📝 Thay đổi gần đây (v1.1.0)
+## 📝 Thay đổi gần đây (v1.2.0)
 
-- **Tích hợp Offline Local AI:** Chạy model `qwen2.5-1.5b-instruct-q4_k_m.gguf` nội bộ qua llama-server, loại bỏ phụ thuộc Ollama bên ngoài.
-- **Trình tải model in-app:** Tự động hỏi tải model hoặc mở cài đặt Cloud với UI trực quan.
-- **Hệ thống Vision OCR:** Hỗ trợ chụp màn hình và trích xuất chữ viết đa ngôn ngữ.
-- **Sửa lỗi Taskbar & Hotkey:** Khắc phục triệt để lỗi mất cửa sổ Taskbar khi hủy chụp màn hình và xung đột phím tắt Windows Snipping Tool.
-- **Đồng bộ giao diện Glass Dropdown:** Tinh chỉnh các menu chọn theo mẫu `flutter_ui_template`.
+- **Remake giao diện Bento Grid & Frosted Glass:** Độ đục kính sữa 86% triệt tiêu hiện tượng chữ nền xuyên thấu, đồng bộ bảng màu tương phản cao WCAG AAA.
+- **Nút hoán đổi nhanh AI:** 1 chạm đổi nguồn AI giữa Local và Cloud với thông báo toast nổi.
+- **Khắc phục lỗi mất văn bản khi chuyển Tab:** Tích hợp `IndexedStack` và `AutomaticKeepAliveClientMixin`.
+- **Icon thương hiệu mới:** Tạo file `.ico` chuẩn đa phân giải 7 kích thước cho Windows từ logo bong bóng kính.
+- **Tối ưu AI Engine Studio:** Bố cục dạng Bento Card trực quan thông số CPU, RAM, Context window.
 
 ---
 

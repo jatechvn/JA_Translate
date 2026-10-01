@@ -72,10 +72,18 @@ bool FlutterWindow::OnCreate() {
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
 
+  // Crucial for Windows 10: Calling Show() immediately ensures the window is visible
+  // so DirectX presents frames and doesn't pause under DXGI_STATUS_OCCLUDED with Aero blur.
+  this->Show();
+
   return true;
 }
 
 void FlutterWindow::OnDestroy() {
+  HWND hwnd = GetHandle();
+  if (hwnd) {
+    ::RemovePropW(hwnd, L"JA_TRANSLATE_INSTANCE");
+  }
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

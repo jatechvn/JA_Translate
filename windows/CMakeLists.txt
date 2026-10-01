@@ -62,7 +62,12 @@ include(flutter/generated_plugins.cmake)
 # Support files are copied into place next to the executable, so that it can
 # run in place. This is done instead of making a separate bundle (as on Linux)
 # so that building and running from within Visual Studio will work.
-set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
+set(JA_BUNDLE_DIR "" CACHE PATH "Optional isolated bundle destination")
+if(JA_BUNDLE_DIR)
+  set(BUILD_BUNDLE_DIR "${JA_BUNDLE_DIR}")
+else()
+  set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
+endif()
 # Make the "install" step default, as it's required to run.
 set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
 set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
@@ -104,3 +109,14 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Qwen runs in-process; keep optional OPUS development assets out of bundles.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../native/runtime/gguf/ja_gguf.dll")
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../native/runtime/gguf"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/native" COMPONENT Runtime)
+  file(GLOB JA_QWEN_MODELS "${CMAKE_CURRENT_SOURCE_DIR}/../models/qwen*.gguf")
+  if(JA_QWEN_MODELS)
+    install(FILES ${JA_QWEN_MODELS}
+      DESTINATION "${CMAKE_INSTALL_PREFIX}/models" COMPONENT Runtime)
+  endif()
+endif()

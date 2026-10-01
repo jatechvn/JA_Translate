@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'api_client.dart';
+import 'app_config.dart';
+import 'local_translation_service.dart';
+import 'gguf_translation_service.dart';
 import 'translation_cache.dart';
 
 class DocumentTranslationProgress {
@@ -260,6 +263,9 @@ class DocumentTranslator {
     required String sourceLang,
     required String targetLang,
   }) async* {
+    final requestedEngine = AppConfig.localEngine;
+    final requestedModel = AppConfig.localGgufModel;
+    final requestedLocal = AppConfig.isLocalAi;
     final tempDir = Directory.systemTemp.createTempSync('ja_translate_doc');
     final ext = filePath.split('.').last.toLowerCase();
     final tempOutputPath = '${tempDir.path}/translated_output.$ext';
@@ -307,11 +313,19 @@ class DocumentTranslator {
         '--tgt',
         targetLang,
         if (cacheFile.isNotEmpty) ...['--cache', cacheFile],
+        if (requestedLocal &&
+            ['opus_mt', 'gguf_native'].contains(requestedEngine))
+          '--app-translation',
+        if (requestedLocal && requestedEngine == 'gguf_native') ...[
+          '--engine-cache-prefix',
+          'gguf-native:$requestedModel:'
+        ],
       ],
     );
 
     try {
-      final process = await Process.start(pythonExe, pythonArgs);
+      final process = await Process.start(pythonExe, pythonArgs,
+          environment: {'PYTHONUTF8': '1'});
 
       final progressController =
           StreamController<DocumentTranslationProgress>();
@@ -320,12 +334,31 @@ class DocumentTranslator {
       process.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen((line) {
+          .listen((line) async {
         try {
           final data = jsonDecode(line) as Map<String, dynamic>;
           final status = data['status'] as String;
 
-          if (status == 'complete') {
+          if (status == 'engine_request') {
+            try {
+              final translation = requestedEngine == 'gguf_native'
+                  ? GgufTranslationService.instance.translate(
+                      text: data['text'] as String,
+                      sourceLang: data['source'] as String,
+                      targetLang: data['target'] as String)
+                  : LocalTranslationService.instance.translate(
+                      text: data['text'] as String,
+                      sourceLang: data['source'] as String,
+                      targetLang: data['target'] as String);
+              final result = await translation.join();
+              process.stdin
+                  .writeln(jsonEncode({'id': data['id'], 'text': result}));
+            } catch (error) {
+              process.stdin.writeln(
+                  jsonEncode({'id': data['id'], 'error': error.toString()}));
+            }
+            await process.stdin.flush();
+          } else if (status == 'complete') {
             progressController.add(DocumentTranslationProgress(
               currentChunk: 100,
               totalChunks: 100,
@@ -458,7 +491,9 @@ class DocumentTranslator {
     required bool hasPyd,
     required List<String> additionalArgs,
   }) {
-    if (hasPyd) {
+    if (hasPyd &&
+        !(AppConfig.isLocalAi &&
+            ['opus_mt', 'gguf_native'].contains(AppConfig.localEngine))) {
       // Clean path slashes for python import sys.path
       final cleanPath = modulesDir.replaceAll('\\', '/');
       return [

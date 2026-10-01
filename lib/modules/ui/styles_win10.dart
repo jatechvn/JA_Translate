@@ -3,15 +3,15 @@ import 'styles.dart';
 
 class StylesWin10 {
   static const dark = AppColors(
-    bgPrimary: Colors.transparent, // fully transparent for Aero Blur
-    bgSecondary: Color(0x80121212), // 50% opacity main background
-    bgTertiary: Color(0xB31F1F1F), // 70% opacity sidebar background
-    bgCard: Color(0xD92C2C2C), // 85% opacity card/panel background
+    bgPrimary: Color(0xDD111827), // ~87% opacity Dark Slate for Aero Blur
+    bgSecondary: Color(0xEE1E293B), // ~93% opacity main background
+    bgTertiary: Color(0xCC0F172A), // ~80% opacity control background
+    bgCard: Color(0xF21E293B), // ~95% opacity card/panel background
     bgHover: Color(0x1F00ADB5), // soft cyan hover
     textPrimary: Color(0xFFEEEEEE),
     textSecondary: Color(0xFFB0B0B0),
     textMuted: Color(0xFF757575),
-    borderDefault: Color(0x1AFFFFFF), // subtle white border
+    borderDefault: Color(0x2EFFFFFF), // subtle white border
     borderHighlight: Color(0xFF00ADB5), // Cyan accent
     linkAccent: Color(0xFF00ADB5), // Cyan accent
     targetAccent: Color(0xFF34D399), // Emerald accent for targets
@@ -22,10 +22,10 @@ class StylesWin10 {
   );
 
   static const light = AppColors(
-    bgPrimary: Colors.transparent, // fully transparent for Aero Blur
-    bgSecondary: Color(0x80FAFAFA), // 50% opacity main background
-    bgTertiary: Color(0xB3F3F3F3), // 70% opacity sidebar background
-    bgCard: Color(0xD9FFFFFF), // 85% opacity card/panel background
+    bgPrimary: Color(0xEBFAFAFA), // ~92% opacity light base
+    bgSecondary: Color(0xF5FFFFFF), // ~96% opacity main background
+    bgTertiary: Color(0xCCE2E8F0), // ~80% opacity control background
+    bgCard: Color(0xF8FFFFFF), // ~97% opacity card/panel background
     bgHover: Color(0x1900ADB5),
     textPrimary: Color(0xFF1F1F1F),
     textSecondary: Color(0xFF757575),

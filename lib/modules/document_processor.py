@@ -38,6 +38,12 @@ bootstrap_dependencies()
 
 # Now import the dependencies safely
 import requests
+import threading
+
+_app_translation = False
+_engine_cache_prefix = 'opus:'
+_app_lock = threading.Lock()
+_app_request_id = 0
 import openpyxl
 import fitz  # PyMuPDF
 from pptx import Presentation
@@ -68,17 +74,20 @@ def load_config():
 _cache = {}
 _cache_path = 'translation_cache.json'
 
-def load_cache():
+def load_cache(explicit_path=None):
     global _cache, _cache_path
     possible_paths = [
         'translation_cache.json',
         os.path.join(os.path.dirname(__file__), '../../translation_cache.json'),
         os.path.join(os.path.dirname(__file__), '../translation_cache.json'),
     ]
-    for path in possible_paths:
-        if os.path.exists(path):
-            _cache_path = path
-            break
+    if explicit_path:
+        _cache_path = explicit_path
+    else:
+        for path in possible_paths:
+            if os.path.exists(path):
+                _cache_path = path
+                break
     if os.path.exists(_cache_path):
         try:
             with open(_cache_path, 'r', encoding='utf-8') as f:
@@ -94,11 +103,11 @@ def save_cache():
         pass
 
 def get_cached_translation(text, src_lang, tgt_lang):
-    key = f"{src_lang}->{tgt_lang}:{text}"
+    key = f"{_engine_cache_prefix if _app_translation else ''}{src_lang}->{tgt_lang}:{text}"
     return _cache.get(key)
 
 def set_cached_translation(text, src_lang, tgt_lang, translated):
-    key = f"{src_lang}->{tgt_lang}:{text}"
+    key = f"{_engine_cache_prefix if _app_translation else ''}{src_lang}->{tgt_lang}:{text}"
     _cache[key] = translated
 
 # ─── Translation API Client ──────────────────────────────────────────────────
@@ -110,6 +119,25 @@ def translate_text(text, src_lang, tgt_lang, api_key, api_url, model, proxy_sett
     if cached:
         return cached
         
+    if _app_translation:
+        global _app_request_id
+        with _app_lock:
+            _app_request_id += 1
+            request_id = _app_request_id
+            print(json.dumps({'status': 'engine_request', 'id': request_id,
+                'text': text, 'source': src_lang, 'target': tgt_lang}), flush=True)
+            line = sys.stdin.readline()
+            if not line:
+                raise RuntimeError('App translation channel closed')
+            response = json.loads(line)
+            if response.get('id') != request_id:
+                raise RuntimeError('Unexpected app translation response')
+            if response.get('error'):
+                raise RuntimeError(response['error'])
+            result = response['text']
+            set_cached_translation(text, src_lang, tgt_lang, result)
+            return result
+
     lang_map = {
         'VN': 'Vietnamese',
         'ENG': 'English',
@@ -470,12 +498,17 @@ def process_docx(input_path, output_path, src_lang, tgt_lang, api_key, api_url, 
 # ─── Main Execution ──────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Document Translation Script")
+    parser.add_argument('--app-translation', action='store_true')
+    parser.add_argument('--engine-cache-prefix', default='opus:')
     parser.add_argument("--input", required=True, help="Input file path")
     parser.add_argument("--output", required=False, help="Output file path")
     parser.add_argument("--src", required=True, help="Source language")
     parser.add_argument("--tgt", required=True, help="Target language")
     parser.add_argument("--cache", required=False, help="Path to translation cache JSON file")
     args = parser.parse_args()
+    global _app_translation, _engine_cache_prefix
+    _app_translation = args.app_translation
+    _engine_cache_prefix = args.engine_cache_prefix
     
     try:
         ext = args.input.split('.')[-1].lower()
@@ -529,10 +562,7 @@ def main():
 
         # Load API keys and Proxy
         config = load_config()
-        if args.cache:
-            global _cache_path
-            _cache_path = args.cache
-        load_cache()
+        load_cache(args.cache)
         
         active_provider = config.get('SETTINGS', 'active_provider', fallback='cloud').lower()
         if active_provider in ('local', 'local_ai'):

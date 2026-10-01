@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-01",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "threads": 4,
+  "ggufContext": 4096,
+  "sampling": "greedy",
+  "comparison": "Same text; OPUS app sentence segmentation vs GGUF entire passage",
+  "memory": "Sampled currentRss of whole Flutter test process, not isolated model RAM or measured peak",
+  "engines": {
+    "opus_mt": {
+      "loadMilliseconds": 274,
+      "beforeRssBytes": 133726208,
+      "loadedRssBytes": 226394112,
+      "afterUnloadRssBytes": 139522048,
+      "results": [
+        {
+          "id": "invoice_charge",
+          "text": "Đây là một cuộc tranh chấp hóa đơn, không phải kiểm tra pin. Khách hàng nói tiền phạt quá cao. Chúng ta đã đồng ý hủy bỏ nó, nhưng hóa đơn gốc phải ở trong nhật ký kiểm toán.",
+          "milliseconds": 934,
+          "processRssBytes": 258641920
+        },
+        {
+          "id": "manufacturing_hold",
+          "text": "Ổ đĩa vượt qua bài kiểm tra đọc, nhưng nó đã thất bại trong bài kiểm tra viết. Chúng ta nên giữ số này, chứ không phải bỏ đi. Ở đây, giữ lại có nghĩa là giữ cho lô hàng không được đóng trong khi kỹ thuật điều tra; điều này không có nghĩa là vĩnh viễn bác bỏ.",
+          "milliseconds": 1401,
+          "processRssBytes": 256016384
+        },
+        {
+          "id": "cold_boot_reference",
+          "text": "Hội đồng quản trị đã thất bại trong cuộc kiểm tra khởi động lạnh sau một chu kỳ năng lượng. Một khởi động lại ấm đã hoạt động, vì vậy kỹ thuật viên thay thế nguồn điện. Sau đó, hội đồng quản trị đã vượt qua bài kiểm tra tương tự. Đừng chuyển nó cho đến khi kiểm tra xong.",
+          "milliseconds": 1463,
+          "processRssBytes": 259903488
+        },
+        {
+          "id": "vi_document_integrity",
+          "text": "Keep the SN-2048 shipments for the engineer to check the data. The disk was still read, so it was not concluded that it was completely broken. Do not delete the original log; only create a translation for comparison. The deadline is 15:30, not 13:30.",
+          "milliseconds": 1845,
+          "processRssBytes": 260968448
+        }
+      ]
+    },
+    "gguf_native": {
+      "loadMilliseconds": 2918,
+      "beforeRssBytes": 137744384,
+      "loadedRssBytes": 1498923008,
+      "afterUnloadRssBytes": 25280512,
+      "results": [
+        {
+          "id": "invoice_charge",
+          "text": "Đây là một tranh chấp hóa đơn, không phải là một thử nghiệm pin. Khách hàng nói rằng mức phí quá cao. Chúng tôi đã đồng ý bỏ qua, nhưng hóa đơn gốc phải được lưu trong log kiểm tra.",
+          "milliseconds": 8746,
+          "processRssBytes": 1665302528
+        },
+        {
+          "id": "manufacturing_hold",
+          "text": "Đèn kiểm tra được, nhưng không qua kiểm tra ghi. Chúng ta nên giữ nó, không nên xả thải. \"Hãy giữ\" có nghĩa là giữ phần này khỏi ghi, không có nghĩa là từ bỏ nó.",
+          "milliseconds": 7003,
+          "processRssBytes": 1618206720
+        },
+        {
+          "id": "cold_boot_reference",
+          "text": "Ngành công nghệ đã không qua được thử nghiệm cold boot sau một khởi động từ nguồn điện. Một khởi động ấm đã thành công, nên kỹ thuật viên thay thế nguồn điện. Sau đó, ngành công nghệ đã qua được thử nghiệm cùng loại. Không giao hàng cho đến khi kiểm tra cuối cùng hoàn tất.",
+          "milliseconds": 7344,
+          "processRssBytes": 1620631552
+        },
+        {
+          "id": "vi_document_integrity",
+          "text": "Keep the SN-2048 order safe for the engineer to check the data recording errors. The disk still reads, so it has not been concluded that it is completely broken. Do not delete the original record; only create a copy for comparison. The deadline is 3:30 PM, not 1:30 PM.",
+          "milliseconds": 9153,
+          "processRssBytes": 1627869184
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "invoice_charge",
+      "source": "en",
+      "target": "vi",
+      "text": "This is an invoice dispute, not a battery test. The customer says the charge is too high. We agreed to waive it, but the original invoice must remain in the audit log."
+    },
+    {
+      "id": "manufacturing_hold",
+      "source": "en",
+      "target": "vi",
+      "text": "The drive passed the read test, but it failed the write test. We should hold this lot, not scrap it. Here, hold means keeping the lot out of shipment while engineering investigates; it does not mean permanently rejecting it."
+    },
+    {
+      "id": "cold_boot_reference",
+      "source": "en",
+      "target": "vi",
+      "text": "The board failed the cold boot test after a power cycle. A warm restart worked, so the technician replaced the power supply. After that, the board passed the same test. Do not ship it until the final inspection is complete."
+    },
+    {
+      "id": "vi_document_integrity",
+      "source": "vi",
+      "target": "en",
+      "text": "Giữ lại lô hàng SN-2048 để kỹ sư kiểm tra lỗi ghi dữ liệu. Ổ đĩa vẫn đọc được nên chưa được kết luận là hỏng hoàn toàn. Không xóa bản ghi gốc; chỉ tạo một bản dịch để đối chiếu. Hạn xử lý là 15:30, không phải 13:30."
+    }
+  ]
+}

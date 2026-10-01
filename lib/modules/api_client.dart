@@ -8,6 +8,8 @@ import 'package:http/io_client.dart';
 import 'package:logging/logging.dart';
 import 'app_config.dart';
 import 'llama_service.dart';
+import 'local_translation_service.dart';
+import 'gguf_translation_service.dart';
 import 'ocr_service.dart';
 import 'translation_cache.dart';
 
@@ -93,6 +95,44 @@ class ApiClient {
     final double temperature;
 
     var textToTranslate = text;
+
+    if (isLocal && ['opus_mt', 'gguf_native'].contains(AppConfig.localEngine)) {
+      final engine = AppConfig.localEngine;
+      final model = AppConfig.localGgufModel;
+      final input = <String>[
+        if (textToTranslate.trim().isNotEmpty) textToTranslate
+      ];
+      for (final image in imagePaths) {
+        final extracted = await OcrService.recognizeText(image);
+        if (extracted != null && extracted.trim().isNotEmpty) {
+          input.add(extracted);
+        }
+      }
+      if (input.isEmpty) throw StateError('No text detected in image');
+      final translated = StringBuffer();
+      final translation = engine == 'gguf_native'
+          ? GgufTranslationService.instance.translate(
+              text: input.join('\n\n'),
+              sourceLang: sourceLang,
+              targetLang: targetLang)
+          : LocalTranslationService.instance.translate(
+              text: input.join('\n\n'),
+              sourceLang: sourceLang,
+              targetLang: targetLang);
+      await for (final chunk in translation) {
+        translated.write(chunk);
+        yield chunk;
+      }
+      if (imagePaths.isEmpty &&
+          translated.isNotEmpty &&
+          AppConfig.isLocalAi &&
+          AppConfig.localEngine == engine &&
+          AppConfig.localGgufModel == model) {
+        await TranslationCache.set(
+            text, sourceLang, targetLang, translated.toString());
+      }
+      return;
+    }
 
     // Multi-tier Vision: If Local AI has no mmproj, run Windows Native OCR first
     if (isLocal && imagePaths.isNotEmpty) {

@@ -2,6 +2,7 @@
 // Lightweight, zero-dependency translation cache manager utilizing a local JSON database
 
 import 'dart:convert';
+import 'app_config.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
@@ -48,7 +49,14 @@ class TranslationCache {
   /// Retrieve cached translation for the specified text and language pair
   static String? get(String text, String srcLang, String tgtLang) {
     if (_cache.isEmpty) initialize();
-    final key = '$srcLang->$tgtLang:$text';
+    final prefix = AppConfig.isLocalAi
+        ? switch (AppConfig.localEngine) {
+            'opus_mt' => 'opus:',
+            'gguf_native' => 'gguf-native:${AppConfig.localGgufModel}:',
+            _ => ''
+          }
+        : '';
+    final key = '$prefix$srcLang->$tgtLang:$text';
     return _cache[key];
   }
 
@@ -56,12 +64,32 @@ class TranslationCache {
   static Future<void> set(
       String text, String srcLang, String tgtLang, String translated) async {
     if (_cachePath == null) initialize();
-    final key = '$srcLang->$tgtLang:$text';
+    final prefix = AppConfig.isLocalAi
+        ? switch (AppConfig.localEngine) {
+            'opus_mt' => 'opus:',
+            'gguf_native' => 'gguf-native:${AppConfig.localGgufModel}:',
+            _ => ''
+          }
+        : '';
+    final key = '$prefix$srcLang->$tgtLang:$text';
     _cache[key] = translated;
 
     try {
       final file = File(_cachePath!);
       await file.writeAsString(jsonEncode(_cache), encoding: utf8);
+    } catch (_) {}
+  }
+
+  /// Clear all cached entries
+  static Future<void> clear() async {
+    _cache.clear();
+    try {
+      if (_cachePath != null) {
+        final file = File(_cachePath!);
+        if (file.existsSync()) {
+          await file.writeAsString(jsonEncode({}), encoding: utf8);
+        }
+      }
     } catch (_) {}
   }
 }

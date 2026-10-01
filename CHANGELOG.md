@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.0] - 2026-10-01
+
+### 🚀 Nâng cấp & Tính năng mới
+- **Tái thiết kế toàn diện giao diện Fluent Frosted Glass (Bento Grid):**
+  - Chuyển đổi toàn bộ UI theo phong cách Bento Grid & Frosted Glass từ `flutter_ui_template`.
+  - Nâng cấp độ đục card (`cardBg`) lên 86% kết hợp lớp phủ sữa mờ (frosted milk glass) ngăn ngừa 100% hiện tượng văn bản phía sau màn hình/cửa sổ khác chiếu xuyên qua làm nhòe chữ.
+  - Tối ưu bảng màu WCAG AAA High Contrast cho cả hai chế độ Sáng (Light) và Tối (Dark).
+  - Tương thích mượt mà hiệu ứng làm mờ cửa sổ Windows DWM (Aero trên Windows 10 và Mica / Acrylic trên Windows 11).
+- **Bộ hoán đổi nhanh AI Cục bộ / Đám mây (1-Tap Quick Engine Switcher):**
+  - Nâng cấp nút Dynamic Island Capsule trên thanh tiêu đề thành bộ chuyển đổi tức thì giữa Local AI (Qwen GGUF Offline) và Cloud AI (NVIDIA NIM Gateway).
+  - Nhấp chuột 1 lần (Tap) để đổi nguồn AI tức thì không gián đoạn công việc, hiển thị Toast xác nhận nổi và tự động lưu cấu hình.
+  - Nhấp giữ (Long Press) để mở sâu AI Engine Studio.
+- **Biểu tượng thương hiệu & Icon Windows mới:**
+  - Nhận diện thương hiệu mới từ `assets/logo.png`, tạo file icon chuẩn `windows/runner/resources/app_icon.ico` đa phân giải 7 kích thước (`16x16` đến `256x256`).
+  - Tích hợp logo đồng bộ trên Taskbar, Desktop Shortcut, Start Menu, TopBar và Hộp thoại Giới thiệu (About).
+- **Bố cục lại AI Engine Studio chuyên nghiệp:**
+  - Thiết kế Bento 3 tầng trực quan: Thẻ điều khiển mô hình (Model Control), Lưới phần cứng & kiến trúc RAM/Context (Hardware Bento Grid), và Cầu nối Cloud AI.
+
+### 🐛 Sửa lỗi & Tối ưu hóa
+- **Khắc phục lỗi mất văn bản khi chuyển Tab (Tab State Preservation):**
+  - Chuyển đổi thanh điều hướng trung tâm từ `AnimatedSwitcher` sang `IndexedStack` duy trì toàn bộ 4 tab (`Text`, `Documents`, `History`, `AI Studio`) liên tục trong widget tree dưới trạng thái `Offstage`.
+  - Tích hợp `AutomaticKeepAliveClientMixin` và hàm đồng bộ khôi phục `restoreText()` từ Lịch sử, bảo toàn 100% văn bản đã nhập và kết quả dịch khi chuyển đổi qua lại.
+- **Khắc phục tràn bố cục (RenderFlex Overflow):** Sửa lỗi tràn 11px ở tiêu đề Document Translation View trên màn hình hẹp.
+- **Bổ sung bộ test tự động toàn diện:** Nâng tổng số ca kiểm thử lên 31 tests (100% pass) kiểm tra toàn vẹn dịch thuật, trạng thái động cơ, đổi ngôn ngữ và bảo toàn dữ liệu tab.
+
+### 📦 Phát hành
+- Đồng bộ version 1.2.0+3 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói chuẩn portable x64 vào `dist/` kèm file nén `JA_Translate_v1.2.0_Windows_x64.zip` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.1.0] - 2026-09-21
 
 ### 🚀 Nâng cấp & Tính năng mới

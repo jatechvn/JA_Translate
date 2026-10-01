@@ -7,20 +7,14 @@
 #include "flutter_window.h"
 #include "utils.h"
 
-// Helper callback to locate the existing JA Translate window
+static const wchar_t kInstancePropName[] = L"JA_TRANSLATE_INSTANCE";
+
+// Helper callback to locate the existing JA Translate window via native property
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
-  wchar_t class_name[256];
-  if (GetClassName(hwnd, class_name, 256)) {
-    if (wcscmp(class_name, L"FLUTTER_RUNNER_WIN32_WINDOW") == 0) {
-      wchar_t window_title[256];
-      if (GetWindowText(hwnd, window_title, 256)) {
-        if (wcsstr(window_title, L"JA Translate") != nullptr) {
-          HWND* p_hwnd = reinterpret_cast<HWND*>(lParam);
-          *p_hwnd = hwnd;
-          return FALSE; // Stop enumeration
-        }
-      }
-    }
+  if (::GetPropW(hwnd, kInstancePropName) == reinterpret_cast<HANDLE>(1)) {
+    HWND* p_hwnd = reinterpret_cast<HWND*>(lParam);
+    *p_hwnd = hwnd;
+    return FALSE; // Stop enumeration
   }
   return TRUE; // Continue enumeration
 }
@@ -39,15 +33,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_FAILURE;
   }
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
-    // Bring the existing window to the foreground
-    HWND hwnd = FindExistingWindow();
+    // Wait briefly in case the primary instance is currently launching
+    HWND hwnd = nullptr;
+    for (int retry = 0; retry < 20; ++retry) {
+      hwnd = FindExistingWindow();
+      if (hwnd) break;
+      ::Sleep(100);
+    }
+
     if (hwnd) {
-      if (IsIconic(hwnd)) {
-        ShowWindow(hwnd, SW_RESTORE);
+      if (::IsIconic(hwnd)) {
+        ::ShowWindow(hwnd, SW_RESTORE);
       } else {
-        ShowWindow(hwnd, SW_SHOW);
+        ::ShowWindow(hwnd, SW_SHOW);
       }
-      SetForegroundWindow(hwnd);
+      ::SetForegroundWindow(hwnd);
+      ::BringWindowToTop(hwnd);
     }
     CloseHandle(hMutex);
     return EXIT_SUCCESS; // Exit the duplicate instance immediately
@@ -77,7 +78,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     CloseHandle(hMutex);
     return EXIT_FAILURE;
   }
+  ::SetPropW(window.GetHandle(), kInstancePropName, reinterpret_cast<HANDLE>(1));
   window.SetQuitOnClose(true);
+  window.Show();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
@@ -85,6 +88,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
+  ::RemovePropW(window.GetHandle(), kInstancePropName);
   ::CoUninitialize();
   CloseHandle(hMutex); // Release Mutex handle
   return EXIT_SUCCESS;

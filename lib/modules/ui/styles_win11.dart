@@ -3,15 +3,16 @@ import 'styles.dart';
 
 class StylesWin11 {
   static const dark = AppColors(
-    bgPrimary: Color(0x1A000000), // 10% opacity black for Acrylic
-    bgSecondary: Color(0x592D2D2D), // 35% opacity main background
-    bgTertiary: Color(0x331C1C1C), // 20% opacity sidebar background
-    bgCard: Color(0x592D2D2D), // 35% opacity card/panel background
+    bgPrimary: Color(
+        0xDD111827), // ~87% opacity Dark Slate for Acrylic blur & solid readability
+    bgSecondary: Color(0xEE1E293B), // ~93% opacity main cards
+    bgTertiary: Color(0xCC0F172A), // ~80% opacity control background
+    bgCard: Color(0xF21E293B), // ~95% opacity card/panel background
     bgHover: Color(0x1F00ADB5), // soft cyan hover
     textPrimary: Color(0xFFFFFFFF),
     textSecondary: Color(0xFFCCCCCC),
     textMuted: Color(0xFF888888),
-    borderDefault: Color(0x1AFFFFFF), // subtle white border
+    borderDefault: Color(0x2EFFFFFF), // subtle white border
     borderHighlight: Color(0xFF00ADB5), // Cyan accent
     linkAccent: Color(0xFF00ADB5), // Cyan accent
     targetAccent: Color(0xFF34D399), // Emerald accent for targets
@@ -22,14 +23,14 @@ class StylesWin11 {
   );
 
   static const light = AppColors(
-    bgPrimary: Color(0x1AFAFAFA), // 10% opacity white for Acrylic
-    bgSecondary: Color(0x59FFFFFF), // 35% opacity main background
-    bgTertiary: Color(0x33E5E5E5), // 20% opacity sidebar background
-    bgCard: Color(0x59FFFFFF), // 35% opacity card/panel background
+    bgPrimary: Color(0xEBFAFAFA), // ~92% opacity light base
+    bgSecondary: Color(0xF5FFFFFF), // ~96% opacity cards
+    bgTertiary: Color(0xCCE2E8F0), // ~80% opacity controls
+    bgCard: Color(0xF8FFFFFF), // ~97% opacity card background
     bgHover: Color(0x1900ADB5),
-    textPrimary: Color(0xFF000000),
-    textSecondary: Color(0xFF555555),
-    textMuted: Color(0xFF777777),
+    textPrimary: Color(0xFF0F172A),
+    textSecondary: Color(0xFF475569),
+    textMuted: Color(0xFF64748B),
     borderDefault: Color(0x1A000000), // subtle black border
     borderHighlight: Color(0xFF00ADB5), // Cyan accent
     linkAccent: Color(0xFF00ADB5), // Cyan accent

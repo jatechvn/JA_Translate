@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 class AppConfig {
   static String? _configPath;
+  static final changes = ValueNotifier<int>(0);
   static final Map<String, Map<String, String>> _sections = {};
   static bool enableTransparency = true;
 
@@ -103,7 +104,7 @@ class AppConfig {
       'vision_model': 'meta/llama-3.2-11b-vision-instruct',
     };
     _sections['LOCAL_AI'] = {
-      'engine': 'llama_cpp',
+      'engine': 'gguf_native',
       'gguf_model': 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
       'llama_port': '8080',
       'threads': '4',
@@ -149,7 +150,7 @@ class AppConfig {
     }
 
     if (!_sections.containsKey('LOCAL_AI')) _sections['LOCAL_AI'] = {};
-    _sections['LOCAL_AI']!.putIfAbsent('engine', () => 'llama_cpp');
+    _sections['LOCAL_AI']!.putIfAbsent('engine', () => 'gguf_native');
     _sections['LOCAL_AI']!
         .putIfAbsent('gguf_model', () => 'qwen2.5-1.5b-instruct-q4_k_m.gguf');
     _sections['LOCAL_AI']!.putIfAbsent('llama_port', () => '8080');
@@ -182,13 +183,35 @@ class AppConfig {
   static String get activeProvider =>
       get('SETTINGS', 'active_provider', defaultValue: 'cloud');
   static String get localEngine =>
-      get('LOCAL_AI', 'engine', defaultValue: 'llama_cpp');
+      get('LOCAL_AI', 'engine', defaultValue: 'gguf_native');
   static String get localGgufModel => get('LOCAL_AI', 'gguf_model',
       defaultValue: 'qwen2.5-1.5b-instruct-q4_k_m.gguf');
   static int get localLlamaPort =>
       int.tryParse(get('LOCAL_AI', 'llama_port', defaultValue: '8080')) ?? 8080;
   static int get localThreads =>
       int.tryParse(get('LOCAL_AI', 'threads', defaultValue: '4')) ?? 4;
+
+  /// Keep the selected installed model; repair stale model and engine defaults.
+  static Future<void> reconcileAvailableModels(
+      List<String> installedModels) async {
+    final models = installedModels
+        .where((m) => !m.toLowerCase().contains('mmproj'))
+        .toList();
+    if (models.isEmpty) return;
+    final current = localGgufModel;
+    final legacy = get('LOCAL_AI', 'model');
+    final model = models.contains(current)
+        ? current
+        : models.contains(legacy)
+            ? legacy
+            : models.first;
+    if (current != model) await set('LOCAL_AI', 'gguf_model', model);
+    if (legacy != model) await set('LOCAL_AI', 'model', model);
+    if (!isLocalAi && get('NVIDIA', 'api_key').trim().isEmpty) {
+      await setActiveProvider('local');
+    }
+  }
+
   static Future<void> setActiveProvider(String provider) async {
     await set('SETTINGS', 'active_provider', provider);
   }
@@ -226,6 +249,10 @@ class AppConfig {
       _sections[section] = {};
     }
     _sections[section]![key] = value;
+    changes.value++;
     await _save();
   }
+
+  /// Manually save config to disk
+  static Future<void> save() => _save();
 }

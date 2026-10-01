@@ -1,31 +1,37 @@
-# Hướng dẫn sử dụng JA Translate v1.1.0
+# Hướng dẫn sử dụng JA Translate v1.2.0
 
-Chào mừng bạn đến với **JA Translate v1.1.0** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến và nhận diện hình ảnh thông minh dành riêng cho hệ điều hành Windows x64.
+Chào mừng bạn đến với **JA Translate v1.2.0** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến và nhận diện hình ảnh thông minh dành riêng cho hệ điều hành Windows x64.
 
 ---
 
 ## 📦 1. Cài đặt & Khởi chạy
 
-1. Tải về file nén `JA_Translate_v1.1.0_Windows_x64.zip`.
-2. Giải nén toàn bộ thư mục `JA_Translate_v1.1.0_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
+1. Tải về file nén `JA_Translate_v1.2.0_Windows_x64.zip`.
+2. Giải nén toàn bộ thư mục `JA_Translate_v1.2.0_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
 3. Khởi chạy tập tin `ja_translate.exe` (hoặc chạy `debug.bat` nếu muốn xem log console).
-4. *Lưu ý:* Ứng dụng chạy ở chế độ Portable độc lập, toàn bộ cấu hình và dữ liệu model được lưu ngay trong thư mục của ứng dụng mà không làm rác hệ điều hành.
+4. *Lưu ý:* Ứng dụng chạy ở chế độ Portable độc lập, toàn bộ cấu hình và dữ liệu model được lưu ngay trong thư mục của ứng dụng mà không làm rác hệ điều hành. Ngoài ra, trong thư mục giải nén có kèm file `install.bat` và `uninstall.bat` giúp tạo/xóa shortcut Desktop & Start Menu thuận tiện mà không cần quyền Admin.
 
 ---
 
 ## 🚀 2. Các tính năng chính
 
-### 🌐 2.1. Dịch thuật & Phiên âm Pinyin
+### 🔄 2.1. Nút hoán đổi nhanh AI (Quick Engine Switcher)
+- Trên thanh tiêu đề ứng dụng có nút Dynamic Island Capsule:
+  - **Nhấp chuột 1 lần (Tap):** Đổi nhanh giữa chế độ `Local AI` (Qwen GGUF Offline) và `Cloud AI` (NVIDIA NIM Gateway / Cloud API). Thông báo Toast sẽ xuất hiện xác nhận tức thời.
+  - **Nhấp giữ (Long Press):** Mở trực tiếp màn hình `AI Engine Studio` để quản lý model và xem thông số phần cứng.
+
+### 🌐 2.2. Dịch thuật & Bảo toàn trạng thái Tab (Tab State Preservation)
 - Hỗ trợ dịch đa ngôn ngữ: Tiếng Trung (Giản thể / Phồn thể), Tiếng Việt, Tiếng Anh, Tiếng Nhật, Tiếng Hàn...
 - Tự động phiên âm Pinyin kèm dấu thanh điệu chuẩn cho các đoạn văn bản tiếng Hán.
+- **Bảo toàn dữ liệu tuyệt đối:** Khi chuyển đổi giữa các tab (Văn bản, Tài liệu, Lịch sử, AI Studio), toàn bộ văn bản bạn đang gõ, kết quả dịch và các tùy chọn đều được giữ nguyên 100%, không bị reset.
 - Tích hợp Text-to-Speech (phát âm giọng đọc bản ngữ) và Speech-to-Text (nhập liệu bằng giọng nói).
 
-### 🤖 2.2. Chế độ AI Cục bộ Ngoại tuyến (Offline Local AI)
+### 🤖 2.3. Chế độ AI Cục bộ Ngoại tuyến (Offline Local AI)
 - Không cần kết nối Internet và không cần cài đặt Ollama phức tạp.
-- Ứng dụng tích hợp sẵn backend `llama-server.exe` nội bộ và hỗ trợ mô hình tối ưu `Qwen 2.5 1.5B Instruct`.
-- **Tải model tự động:** Khi chuyển sang chế độ Local AI mà chưa có model, ứng dụng sẽ hiện thông báo hỏi tải mô hình trực tiếp về thư mục `models/` với thanh tiến trình real-time.
+- Ứng dụng tích hợp sẵn backend `llama-server.exe` nội bộ và hỗ trợ mô hình tối ưu `Qwen 2.5 1.5B Instruct` (nhúng sẵn trong bản phát hành).
+- Màn hình AI Studio cung cấp thông số CPU, RAM chiếm dụng và kích thước ngữ cảnh (Context Window 4,096 tokens).
 
-### 📸 2.3. Chụp màn hình & OCR nhận diện hình ảnh (Screen Snip & Vision OCR)
+### 📸 2.4. Chụp màn hình & OCR nhận diện hình ảnh (Screen Snip & Vision OCR)
 - **Chụp màn hình:** Bấm vào biểu tượng Camera hoặc sử dụng phím tắt `Win + Shift + S` trên Windows để cắt vùng màn hình cần dịch.
 - **Quy trình OCR đa tầng:** 
   - Hệ thống tự động phân tích ảnh và trích xuất chữ viết bằng Tesseract OCR cục bộ.
