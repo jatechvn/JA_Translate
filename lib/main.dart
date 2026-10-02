@@ -17,9 +17,16 @@ import 'modules/translation_cache.dart';
 import 'modules/translation_history.dart';
 import 'modules/desktop_service.dart';
 import 'modules/window_helper.dart';
+import 'modules/build_info.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (args.contains('-debug') ||
+      args.contains('--debug') ||
+      args.contains('-d')) {
+    BuildInfo.isCliDebug = true;
+  }
 
   // Setup diagnostic logger
   setupLogger();
@@ -126,9 +133,11 @@ class _AppContent extends StatelessWidget {
                 },
               ),
             ],
-            child: const DashboardShell(
+            child: DashboardShell(
               appTitle: appName,
-              appVersion: appVersion,
+              appVersion: BuildInfo.version,
+              isDebug: BuildInfo.isDebug,
+              buildTimestamp: BuildInfo.debugTimestamp,
             ),
           );
         },

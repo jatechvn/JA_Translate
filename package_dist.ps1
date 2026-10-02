@@ -30,13 +30,13 @@ Write-Host "Copying Release binary files..."
 Copy-Item -Path (Join-Path $rel "*") -Destination $targetDir -Recurse -Force
 
 Write-Host "Copying documentation, configurations, and installer suite..."
-$docs = @("config.ini", "update_config.json", "install.bat", "uninstall.bat", "uninstall.ps1", "README.md", "CHANGELOG.md", "USERGUIDE.md", "RELEASE_NOTES.md", "ABOUT.txt")
+$docs = @("config.ini", "update_config.json", "debug.bat", "install.bat", "uninstall.bat", "uninstall.ps1", "README.md", "CHANGELOG.md", "USERGUIDE.md", "RELEASE_NOTES.md", "ABOUT.txt")
 foreach ($doc in $docs) {
     $src = Join-Path $root $doc
     if (Test-Path $src) {
         Copy-Item -Path $src -Destination (Join-Path $targetDir $doc) -Force
-        # Also copy installer scripts to dist root for convenience
-        if ($doc -in @("install.bat", "uninstall.bat", "uninstall.ps1")) {
+        # Also copy installer & launcher scripts to dist root for convenience
+        if ($doc -in @("debug.bat", "install.bat", "uninstall.bat", "uninstall.ps1")) {
             Copy-Item -Path $src -Destination (Join-Path $dist $doc) -Force
         }
     }

@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'build_info.dart';
 
 IOSink? _logFileSink;
 
@@ -24,8 +25,11 @@ void setupLogger() {
   _logFileSink = logFile.openWrite(mode: FileMode.append);
 
   Logger.root.onRecord.listen((record) {
+    final timestamp = BuildInfo.isDebug
+        ? record.time.toIso8601String()
+        : record.time.toIso8601String().substring(11, 19);
     final message =
-        '[${record.time}] ${record.level.name}: ${record.loggerName} - ${record.message}';
+        '[$timestamp] [${record.level.name}] ${record.loggerName}: ${record.message}';
     // Console output
     // ignore: avoid_print
     print(message);
