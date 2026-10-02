@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
+import '../theme/language_provider.dart';
 import 'glass_widgets.dart';
 
 /// Item definition for [GlassDropdown].
@@ -35,7 +36,7 @@ class GlassDropdown<T> extends StatefulWidget {
   final List<GlassDropdownItem<T>> items;
   final T? value;
   final ValueChanged<T> onChanged;
-  final String hintText;
+  final String? hintText;
   final AppColors colors;
   final double maxHeight;
   final bool enableSearch;
@@ -48,7 +49,7 @@ class GlassDropdown<T> extends StatefulWidget {
     required this.value,
     required this.onChanged,
     required this.colors,
-    this.hintText = 'Chọn một mục…',
+    this.hintText,
     this.maxHeight = 280,
     this.enableSearch = true,
     this.borderRadius = 12,
@@ -197,7 +198,11 @@ class _GlassDropdownState<T> extends State<GlassDropdown<T>> {
                 ],
                 Expanded(
                   child: Text(
-                    selectedItem?.label ?? widget.hintText,
+                    selectedItem?.label ??
+                        widget.hintText ??
+                        context
+                            .watch<LanguageProvider>()
+                            .t('dropdown_select_item'),
                     style: TextStyle(
                       color: selectedItem != null
                           ? colors.textPrimary
@@ -385,8 +390,9 @@ class _GlassDropdownMenuState<T> extends State<_GlassDropdownMenu<T>> {
                               decoration: InputDecoration(
                                 isDense: true,
                                 border: InputBorder.none,
-                                hintText:
-                                    'Tìm kiếm ${widget.items.length} mục…',
+                                hintText: context.read<LanguageProvider>().t(
+                                    'dropdown_search_items',
+                                    [widget.items.length]),
                                 hintStyle: TextStyle(
                                   color: colors.textMuted,
                                   fontSize: 11.5,
@@ -419,7 +425,9 @@ class _GlassDropdownMenuState<T> extends State<_GlassDropdownMenu<T>> {
                       ? Padding(
                           padding: const EdgeInsets.all(16),
                           child: Text(
-                            'Không tìm thấy mục phù hợp',
+                            context
+                                .read<LanguageProvider>()
+                                .t('dropdown_no_match'),
                             style: TextStyle(
                               color: colors.textMuted,
                               fontSize: 12,

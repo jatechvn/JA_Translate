@@ -348,9 +348,10 @@ class TextTranslationViewState extends State<TextTranslationView>
       final hasPerm = await SttService.hasPermission();
       if (!hasPerm) {
         if (mounted) {
+          final lang = context.read<LanguageProvider>();
           showAppToast(
             context,
-            message: 'Cần cấp quyền Microphone để ghi âm giọng nói!',
+            message: lang.t('text_mic_permission_needed'),
             icon: Icons.mic_off_rounded,
             accentColor: context.read<ThemeProvider>().colors.accentAmber,
           );
@@ -520,7 +521,7 @@ class TextTranslationViewState extends State<TextTranslationView>
                                 _buildIconButton(
                                   icon: Icons.image_outlined,
                                   color: colors.textSecondary,
-                                  tooltip: 'Đính kèm ảnh',
+                                  tooltip: lang.t('text_attach_image'),
                                   onTap: _attachImages,
                                 ),
                                 const SizedBox(width: 4),
@@ -610,7 +611,7 @@ class TextTranslationViewState extends State<TextTranslationView>
                                               size: 20),
                                           const SizedBox(width: 6),
                                           Text(
-                                            'Ảnh ${index + 1}',
+                                            lang.t('text_image_n', [index + 1]),
                                             style:
                                                 const TextStyle(fontSize: 11),
                                           ),
@@ -668,7 +669,7 @@ class TextTranslationViewState extends State<TextTranslationView>
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
-                                      '$outputChars ký tự',
+                                      lang.t('text_char_count', [outputChars]),
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: TextStyle(
@@ -1011,7 +1012,7 @@ class TextTranslationViewState extends State<TextTranslationView>
                     ? colors.textMuted.withValues(alpha: 0.4)
                     : colors.accentCyan,
               ),
-              tooltip: 'Đổi chiều ngôn ngữ',
+              tooltip: lang.t('text_swap_languages'),
               splashRadius: 18,
               onPressed: _srcLang == 'auto' ? null : _swapLanguages,
             ),

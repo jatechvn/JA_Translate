@@ -34,9 +34,20 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
 
   bool _isTranslating = false;
   double _progress = 0.0;
-  String _statusMessage = 'Sẵn sàng dịch';
+  String? _statusKey = 'doc_ready';
+  String _statusMessage = '';
+  int _currentChunk = 0;
+  int _totalChunks = 0;
   String? _resultText;
   String? _errorMessage;
+
+  String _getStatusText(LanguageProvider lang) {
+    if (_statusKey != null) {
+      return lang.t(_statusKey!);
+    }
+    return lang.documentProgressText(
+        _statusMessage, _currentChunk, _totalChunks);
+  }
 
   StreamSubscription<DocumentTranslationProgress>? _subscription;
 
@@ -60,7 +71,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
             _progress = 0.0;
             _resultText = null;
             _errorMessage = null;
-            _statusMessage = 'Đang phân tích tệp...';
+            _statusKey = 'doc_analyzing';
           });
 
           try {
@@ -68,21 +79,22 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
             if (mounted) {
               setState(() {
                 _fileStats = stats;
-                _statusMessage = 'Đã sẵn sàng dịch tài liệu';
+                _statusKey = 'doc_ready_sub';
               });
             }
           } catch (_) {
             if (mounted) {
-              setState(() => _statusMessage = 'Đã chọn tệp');
+              setState(() => _statusKey = 'doc_file_selected');
             }
           }
         }
       }
     } catch (e) {
       if (mounted) {
+        final lang = context.read<LanguageProvider>();
         showAppToast(
           context,
-          message: 'Lỗi chọn tệp: $e',
+          message: lang.t('doc_file_error', [e.toString()]),
           icon: Icons.error_outline_rounded,
           accentColor: context.read<ThemeProvider>().colors.accentRose,
         );
@@ -96,7 +108,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
     setState(() {
       _isTranslating = true;
       _progress = 0.0;
-      _statusMessage = 'Bắt đầu quá trình dịch tài liệu...';
+      _statusKey = 'doc_translating';
       _resultText = null;
       _errorMessage = null;
     });
@@ -113,7 +125,10 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
         if (!mounted) return;
         setState(() {
           _progress = p.percentage;
+          _statusKey = null;
           _statusMessage = p.status;
+          _currentChunk = p.currentChunk;
+          _totalChunks = p.totalChunks;
           if (p.resultText != null) {
             _resultText = p.resultText;
           }
@@ -123,7 +138,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
           }
           if (p.percentage >= 1.0) {
             _isTranslating = false;
-            _statusMessage = 'Hoàn tất dịch tài liệu!';
+            _statusKey = 'doc_complete';
           }
         });
       },
@@ -132,7 +147,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
         setState(() {
           _isTranslating = false;
           _errorMessage = err.toString();
-          _statusMessage = 'Lỗi dịch tài liệu';
+          _statusKey = 'doc_error';
         });
       },
       onDone: () {
@@ -148,7 +163,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
     _subscription?.cancel();
     setState(() {
       _isTranslating = false;
-      _statusMessage = 'Đã hủy dịch';
+      _statusKey = 'doc_cancelled';
     });
   }
 
@@ -274,7 +289,10 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
                               const SizedBox(height: 2),
                               Text(
                                 _fileStats != null
-                                    ? 'Ước tính: ${_fileStats!.charCount} ký tự • ${_fileStats!.wordCount} từ'
+                                    ? lang.t('doc_stats_estimate', [
+                                        _fileStats!.charCount,
+                                        _fileStats!.wordCount
+                                      ])
                                     : _selectedFilePath!,
                                 style: TextStyle(
                                   fontSize: 11,
@@ -332,7 +350,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Hỗ trợ: PDF (.pdf), Microsoft Word (.docx), Excel (.xlsx), PowerPoint (.pptx), TXT, Markdown',
+                            lang.t('doc_supported_formats'),
                             style: TextStyle(
                               fontSize: 10.5,
                               color: colors.textMuted,
@@ -356,7 +374,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cấu Hình Bản Dịch Tài Liệu',
+                  lang.t('doc_config_title'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -446,7 +464,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _statusMessage,
+                        _getStatusText(lang),
                         style: TextStyle(
                           fontSize: 12,
                           color: colors.accentCyan,
@@ -508,7 +526,7 @@ class _DocumentTranslationViewState extends State<DocumentTranslationView>
                       OutlinedButton.icon(
                         onPressed: _cancelTranslation,
                         icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('Hủy'),
+                        label: Text(lang.t('doc_cancel_btn')),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: colors.accentRose,
                           side: BorderSide(color: colors.accentRose),

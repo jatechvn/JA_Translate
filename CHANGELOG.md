@@ -2,6 +2,29 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.1] - 2026-10-02
+
+### 🌐 Chuẩn hóa Đa ngôn ngữ (VI / ENG / CN) Toàn diện
+- **Loại bỏ 100% chuỗi ký tự cố định (Hardcoded Strings):**
+  - Màn hình Lịch sử Dịch: Toàn bộ hộp thoại xóa lịch sử (`history_clear_*`), bộ lọc đã lưu (`history_saved_filter`) và thông báo khôi phục (`history_restored_toast`) chuyển sang từ điển động.
+  - Màn hình AI Studio: Thẻ Bento phần cứng, RAM, kích thước ngữ cảnh, huy hiệu trạng thái mô hình và nút chuyển nhanh Cloud AI được đồng bộ 3 ngôn ngữ.
+  - Màn hình Dịch Tài Liệu: Tích hợp hệ thống quản lý trạng thái dịch động `_statusKey` (`doc_*`), tự động chuyển ngữ theo thời gian thực khi đổi ngôn ngữ hiển thị mà không làm đứt mạch tiến trình.
+  - Màn hình Dịch Văn Bản: Bổ sung hỗ trợ đa ngữ cho cảnh báo microphone, tooltip đính kèm ảnh, nhãn ảnh và bộ đếm ký tự.
+  - Bảng Cài đặt Nhanh & Hộp thoại About: Toàn bộ mô tả tính năng tự động dịch, pinyin, phông PDF và bảng 9 phím tắt hệ thống được đồng bộ qua hệ thống `shortcut_*` và `about_*`.
+  - Bộ điều khiển GlassDropdown & TopBar: Gợi ý tìm kiếm, trạng thái trống và tooltip/toast chuyển đổi AI tức thời tuân thủ chuẩn đa ngôn ngữ.
+
+### 🧪 Kiểm thử & Bảo toàn Ổn định
+- **Bổ sung bộ test tự động chuyên sâu:**
+  - `test/complete_localization_test.dart`: Đối soát tự động tất cả các khóa dịch thuật trên cả 3 ngôn ngữ và kiểm thử cơ chế nội suy chuỗi tham số `%s`, `%d`.
+  - `test/localization_regression_test.dart`: Kiểm tra tiến trình dịch tài liệu và thanh tiêu đề TopBar.
+  - Toàn bộ 35/35 unit & widget test chạy thành công 100%.
+
+### 📦 Phát hành
+- Đồng bộ version 1.2.1+4 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói chuẩn portable x64 vào `dist/` kèm file nén `JA_Translate_v1.2.1_Windows_x64.zip` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.2.0] - 2026-10-01
 
 ### 🚀 Nâng cấp & Tính năng mới

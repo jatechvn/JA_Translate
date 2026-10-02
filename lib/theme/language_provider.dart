@@ -104,7 +104,98 @@ class LanguageProvider extends ChangeNotifier {
 
   String tr(String key, [List<dynamic>? args]) => t(key, args);
 
+  /// Checks the actual locale entry without applying fallback.
+  bool hasTranslation(String key, AppLanguage locale) =>
+      _dictionary[key]?[locale.code]?.trim().isNotEmpty ?? false;
+
+  /// Render progress in the active UI locale, including legacy Python messages.
+  String documentProgressText(String status, int current, int total) {
+    const keys = {
+      'reading_file': 'doc_analyzing',
+      'error_reading_file': 'doc_error',
+      'error_empty_file': 'doc_empty',
+      'error_api': 'doc_error',
+      'error': 'doc_error',
+      'complete': 'doc_complete',
+      'Analyzing PDF layout...': 'doc_pdf_analyzing',
+      'Applying PDF modifications...': 'doc_pdf_applying',
+      'Scanning Excel sheets...': 'doc_excel_scanning',
+      'Scanning slides...': 'doc_slides_scanning',
+      'Scanning Word paragraphs...': 'doc_word_scanning',
+    };
+    final key = keys[status];
+    if (key != null) return t(key);
+    if (status == 'translating_chunk') {
+      return t('doc_progress_items', [current, total]);
+    }
+    final translating = RegExp(
+            r'^Translating (?:PDF text block|Excel cells|PowerPoint texts|Word text) (\d+) of (\d+)\.\.\.$')
+        .firstMatch(status);
+    if (translating != null) {
+      return t(
+          'doc_progress_items', [translating.group(1)!, translating.group(2)!]);
+    }
+    final cached = RegExp(
+            r'^Found (\d+) cached translations\. Translating remaining (\d+) texts\.\.\.$')
+        .firstMatch(status);
+    if (cached != null) {
+      return t('doc_progress_cached', [cached.group(1)!, cached.group(2)!]);
+    }
+    final allCached = RegExp(r'^All (\d+) texts loaded from local cache!$')
+        .firstMatch(status);
+    if (allCached != null) {
+      return t('doc_progress_all_cached', [allCached.group(1)!]);
+    }
+    // Diagnostics belong in the error details, not in the translated status.
+    return t('doc_translating');
+  }
+
   static final Map<String, Map<String, String>> _dictionary = {
+    'doc_empty': {
+      'VI': "Tài liệu không có nội dung",
+      'ENG': "Document is empty",
+      'CN': "文档内容为空",
+    },
+    'doc_pdf_analyzing': {
+      'VI': "Đang phân tích bố cục PDF…",
+      'ENG': "Analyzing PDF layout…",
+      'CN': "正在分析 PDF 布局…",
+    },
+    'doc_pdf_applying': {
+      'VI': "Đang cập nhật nội dung PDF…",
+      'ENG': "Applying PDF modifications…",
+      'CN': "正在更新 PDF 内容…",
+    },
+    'doc_excel_scanning': {
+      'VI': "Đang đọc các trang tính Excel…",
+      'ENG': "Scanning Excel sheets…",
+      'CN': "正在扫描 Excel 工作表…",
+    },
+    'doc_slides_scanning': {
+      'VI': "Đang đọc các trang chiếu…",
+      'ENG': "Scanning slides…",
+      'CN': "正在扫描幻灯片…",
+    },
+    'doc_word_scanning': {
+      'VI': "Đang đọc các đoạn văn Word…",
+      'ENG': "Scanning Word paragraphs…",
+      'CN': "正在扫描 Word 段落…",
+    },
+    'doc_progress_items': {
+      'VI': "Đang dịch mục %s / %s…",
+      'ENG': "Translating item %s / %s…",
+      'CN': "正在翻译第 %s / %s 项…",
+    },
+    'doc_progress_cached': {
+      'VI': "Đã có %s mục trong cache; còn %s mục cần dịch…",
+      'ENG': "Found %s cached items; translating %s remaining items…",
+      'CN': "已缓存 %s 项；还需翻译 %s 项…",
+    },
+    'doc_progress_all_cached': {
+      'VI': "Đã đọc %s mục từ cache!",
+      'ENG': "Loaded %s items from cache!",
+      'CN': "已从缓存加载 %s 项！",
+    },
     'ai_native_engine': {
       'VI': 'Engine dịch trong app',
       'ENG': 'In-app translation engine',
@@ -978,6 +1069,375 @@ class LanguageProvider extends ChangeNotifier {
       'VI': 'Đã lưu cấu hình OTA thành công!',
       'ENG': 'OTA configuration saved!',
       'CN': 'OTA 配置保存成功！',
+    },
+
+    // --- History View Keys ---
+    'history_saved_filter': {
+      'VI': 'Đã lưu',
+      'ENG': 'Saved',
+      'CN': '已收藏',
+    },
+    'history_clear_title': {
+      'VI': 'Xóa toàn bộ lịch sử',
+      'ENG': 'Clear All History',
+      'CN': '清空全部历史',
+    },
+    'history_clear_confirm_msg': {
+      'VI':
+          'Bạn có chắc chắn muốn xóa toàn bộ lịch sử dịch không? Thao tác này không thể hoàn tác.',
+      'ENG':
+          'Are you sure you want to clear all translation history? This action cannot be undone.',
+      'CN': '您确定要清空全部翻译历史吗？此操作无法撤销。',
+    },
+    'history_clear_confirm_btn': {
+      'VI': 'Xác nhận xóa',
+      'ENG': 'Confirm Delete',
+      'CN': '确认清空',
+    },
+    'history_clear_cancel_btn': {
+      'VI': 'Hủy',
+      'ENG': 'Cancel',
+      'CN': '取消',
+    },
+    'history_clear_success_toast': {
+      'VI': 'Đã xóa toàn bộ lịch sử!',
+      'ENG': 'Translation history cleared!',
+      'CN': '已清空全部翻译历史！',
+    },
+    'history_restored_toast': {
+      'VI': 'Đã đưa vào khung dịch!',
+      'ENG': 'Restored to translation editor!',
+      'CN': '已恢复至翻译框！',
+    },
+
+    // --- AI Engine Studio Bento & Status Keys ---
+    'ai_status_active_ram': {
+      'VI': 'ĐANG CHẠY TRÊN RAM',
+      'ENG': 'ACTIVE IN RAM',
+      'CN': '已加载至内存',
+    },
+    'ai_status_standby': {
+      'VI': 'CHỜ NẠP',
+      'ENG': 'STANDBY',
+      'CN': '待加载',
+    },
+    'ai_status_primary_engine': {
+      'VI': 'ĐỘNG CƠ CHÍNH',
+      'ENG': 'PRIMARY ENGINE',
+      'CN': '主翻译引擎',
+    },
+    'ai_set_primary_btn': {
+      'VI': 'Đặt làm Động cơ chính',
+      'ENG': 'Set as Primary Engine',
+      'CN': '设为主引擎',
+    },
+    'ai_set_primary_toast': {
+      'VI': 'Đã kích hoạt Local AI làm động cơ dịch chính',
+      'ENG': 'Activated Local AI as primary engine',
+      'CN': '已将本地 AI 设为主翻译引擎',
+    },
+    'ai_hw_compute_title': {
+      'VI': 'Phần cứng & Xử lý',
+      'ENG': 'Hardware & Compute',
+      'CN': '硬件与计算',
+    },
+    'ai_hw_compute_desc': {
+      'VI': 'Native C++ · Q4_K_M Quantized',
+      'ENG': 'Native C++ · Q4_K_M Quantized',
+      'CN': '原生 C++ · Q4_K_M 量化',
+    },
+    'ai_res_ram_title': {
+      'VI': 'Tài nguyên & RAM',
+      'ENG': 'Resources & RAM',
+      'CN': '资源与内存',
+    },
+    'ai_res_ram_occupied': {
+      'VI': 'Đang chiếm ~1.1 GB RAM',
+      'ENG': 'Occupying ~1.1 GB RAM',
+      'CN': '占用约 1.1 GB 内存',
+    },
+    'ai_res_ram_idle': {
+      'VI': 'Giải phóng khi rảnh',
+      'ENG': 'Freed when idle',
+      'CN': '空闲时自动释放',
+    },
+    'ai_context_title': {
+      'VI': 'Cửa sổ Ngữ cảnh',
+      'ENG': 'Context Window',
+      'CN': '上下文窗口',
+    },
+    'ai_context_hint': {
+      'VI': 'Khuyên dùng ≤ 3,072 tokens/đoạn',
+      'ENG': 'Recommended ≤ 3,072 tokens/passage',
+      'CN': '建议每段 ≤ 3,072 个词元',
+    },
+    'ai_cloud_bridge_title': {
+      'VI': 'Cần dịch tài liệu lớn hoặc mô hình mạnh hơn?',
+      'ENG': 'Need to translate large documents or use stronger models?',
+      'CN': '需要翻译大型文档或使用更强模型？',
+    },
+    'ai_cloud_bridge_desc': {
+      'VI':
+          'Cloud AI (NVIDIA NIM Gateway / Qwen 2.5 70B) hỗ trợ dịch tốc độ cao và ngữ cảnh mở rộng.',
+      'ENG':
+          'Cloud AI (NVIDIA NIM Gateway / Qwen 2.5 70B) provides ultra-fast speed and expanded context.',
+      'CN': '云端 AI (NVIDIA NIM 网关 / Qwen 2.5 70B) 提供超高速度与拓展上下文。',
+    },
+    'ai_cloud_bridge_btn': {
+      'VI': 'Xem Cloud AI',
+      'ENG': 'Explore Cloud AI',
+      'CN': '查看云端 AI',
+    },
+
+    // --- Document Translation View Keys ---
+    'doc_ready': {
+      'VI': 'Sẵn sàng dịch',
+      'ENG': 'Ready to translate',
+      'CN': '准备就绪',
+    },
+    'doc_analyzing': {
+      'VI': 'Đang phân tích tệp...',
+      'ENG': 'Analyzing document...',
+      'CN': '正在解析文件...',
+    },
+    'doc_ready_sub': {
+      'VI': 'Đã sẵn sàng dịch tài liệu',
+      'ENG': 'Document is ready to translate',
+      'CN': '文档已准备好翻译',
+    },
+    'doc_file_selected': {
+      'VI': 'Đã chọn tệp',
+      'ENG': 'File selected',
+      'CN': '已选择文件',
+    },
+    'doc_file_error': {
+      'VI': 'Lỗi chọn tệp: %s',
+      'ENG': 'File selection error: %s',
+      'CN': '选择文件出错: %s',
+    },
+    'doc_translating': {
+      'VI': 'Bắt đầu quá trình dịch tài liệu...',
+      'ENG': 'Starting document translation...',
+      'CN': '开始翻译文档...',
+    },
+    'doc_complete': {
+      'VI': 'Hoàn tất dịch tài liệu!',
+      'ENG': 'Document translation completed!',
+      'CN': '文档翻译完成！',
+    },
+    'doc_error': {
+      'VI': 'Lỗi dịch tài liệu',
+      'ENG': 'Document translation error',
+      'CN': '文档翻译错误',
+    },
+    'doc_cancelled': {
+      'VI': 'Đã hủy dịch',
+      'ENG': 'Translation cancelled',
+      'CN': '已取消翻译',
+    },
+    'doc_stats_estimate': {
+      'VI': 'Ước tính: %s ký tự • %s từ',
+      'ENG': 'Estimated: %s characters • %s words',
+      'CN': '预估: %s 字符 • %s 单词',
+    },
+    'doc_supported_formats': {
+      'VI':
+          'Hỗ trợ: PDF (.pdf), Microsoft Word (.docx), Excel (.xlsx), PowerPoint (.pptx), TXT, Markdown',
+      'ENG':
+          'Supports: PDF (.pdf), Microsoft Word (.docx), Excel (.xlsx), PowerPoint (.pptx), TXT, Markdown',
+      'CN':
+          '支持格式: PDF (.pdf), Word (.docx), Excel (.xlsx), PPT (.pptx), TXT, Markdown',
+    },
+    'doc_config_title': {
+      'VI': 'Cấu hình bản dịch tài liệu',
+      'ENG': 'Document Translation Settings',
+      'CN': '文档翻译配置',
+    },
+    'doc_cancel_btn': {
+      'VI': 'Hủy',
+      'ENG': 'Cancel',
+      'CN': '取消',
+    },
+
+    // --- Text Translation View Keys ---
+    'text_mic_permission_needed': {
+      'VI': 'Cần cấp quyền Microphone để ghi âm giọng nói!',
+      'ENG': 'Microphone permission is required for voice input!',
+      'CN': '语音输入需要麦克风权限！',
+    },
+    'text_attach_image': {
+      'VI': 'Đính kèm ảnh',
+      'ENG': 'Attach Image',
+      'CN': '附加图片',
+    },
+    'text_image_n': {
+      'VI': 'Ảnh %d',
+      'ENG': 'Image %d',
+      'CN': '图片 %d',
+    },
+    'text_char_count': {
+      'VI': '%d ký tự',
+      'ENG': '%d characters',
+      'CN': '%d 字符',
+    },
+    'text_swap_languages': {
+      'VI': 'Đổi chiều ngôn ngữ',
+      'ENG': 'Swap Languages',
+      'CN': '切换语言方向',
+    },
+
+    // --- Settings & Dialog Keys ---
+    'settings_auto_translate': {
+      'VI': 'Tự động kích hoạt dịch khi dừng gõ văn bản',
+      'ENG': 'Auto-translate when typing stops',
+      'CN': '停止输入时自动触发翻译',
+    },
+    'settings_pinyin_display': {
+      'VI': 'Hiển thị phiên âm Pinyin khi ngôn ngữ nguồn là Tiếng Trung',
+      'ENG': 'Show Pinyin phonetic ruby when source is Chinese',
+      'CN': '源语言为中文时显示拼音标注',
+    },
+    'settings_pdf_fonts': {
+      'VI': 'Áp dụng bộ phông chống lỗi dấu khi xuất file PDF và DOCX',
+      'ENG': 'Apply anti-font-bleed fonts for PDF and DOCX exports',
+      'CN': '导出 PDF 和 DOCX 时应用防乱码字体',
+    },
+    'settings_target_lang': {
+      'VI': 'Ngôn ngữ đích mặc định:',
+      'ENG': 'Default Target Language:',
+      'CN': '默认目标语言:',
+    },
+    'settings_author': {
+      'VI': 'Tác giả:',
+      'ENG': 'Author:',
+      'CN': '作者:',
+    },
+    'dropdown_select_item': {
+      'VI': 'Chọn một mục…',
+      'ENG': 'Select an item…',
+      'CN': '请选择一项…',
+    },
+    'dropdown_search_items': {
+      'VI': 'Tìm kiếm %d mục…',
+      'ENG': 'Search %d items…',
+      'CN': '搜索 %d 项…',
+    },
+    'dropdown_no_match': {
+      'VI': 'Không tìm thấy mục phù hợp',
+      'ENG': 'No matching items found',
+      'CN': '未找到匹配项',
+    },
+
+    // --- Keyboard Shortcuts ---
+    'shortcut_translate_now': {
+      'VI': 'Kích hoạt dịch ngay lập tức',
+      'ENG': 'Trigger translation immediately',
+      'CN': '立即执行翻译',
+    },
+    'shortcut_tab_text': {
+      'VI': 'Chuyển sang màn hình Dịch Văn bản',
+      'ENG': 'Switch to Text Translation view',
+      'CN': '切换至文本翻译界面',
+    },
+    'shortcut_tab_doc': {
+      'VI': 'Chuyển sang màn hình Dịch Tài liệu',
+      'ENG': 'Switch to Document Translation view',
+      'CN': '切换至文档翻译界面',
+    },
+    'shortcut_tab_history': {
+      'VI': 'Chuyển sang màn hình Lịch sử Dịch',
+      'ENG': 'Switch to Translation History view',
+      'CN': '切换至翻译历史界面',
+    },
+    'shortcut_tab_studio': {
+      'VI': 'Chuyển sang màn hình Quản trị AI Studio',
+      'ENG': 'Switch to AI Studio view',
+      'CN': '切换至 AI 工作台界面',
+    },
+    'shortcut_cmd_palette': {
+      'VI': 'Mở Bảng lệnh tác vụ nhanh (Command Palette)',
+      'ENG': 'Open Command Palette',
+      'CN': '打开快捷命令面板 (Command Palette)',
+    },
+    'shortcut_toggle_theme': {
+      'VI': 'Chuyển đổi tức thời Giao diện Sáng / Tối',
+      'ENG': 'Toggle Light / Dark Theme',
+      'CN': '快速切换明亮 / 暗黑主题',
+    },
+    'shortcut_open_settings': {
+      'VI': 'Mở Hộp thoại Cài đặt hệ thống',
+      'ENG': 'Open System Settings dialog',
+      'CN': '打开系统设置面板',
+    },
+    'shortcut_screen_snip': {
+      'VI': 'Chụp vùng màn hình & Trích chữ OCR',
+      'ENG': 'Screen region snip & OCR extraction',
+      'CN': '区域截图与 OCR 文字识别',
+    },
+
+    // --- About Tab Info Rows ---
+    'about_author': {
+      'VI': 'Tác giả:',
+      'ENG': 'Author:',
+      'CN': '作者:',
+    },
+    'about_runtime_mode': {
+      'VI': 'Cơ chế chạy:',
+      'ENG': 'Runtime:',
+      'CN': '运行机制:',
+    },
+    'about_mutex_active': {
+      'VI': 'Chống mở trùng Mutex (JA_TRANSLATE_MUTEX) Active',
+      'ENG': 'Single Instance Mutex (JA_TRANSLATE_MUTEX) Active',
+      'CN': '单实例互斥体 (JA_TRANSLATE_MUTEX) 激活',
+    },
+    'about_os': {
+      'VI': 'Hệ điều hành:',
+      'ENG': 'OS:',
+      'CN': '操作系统:',
+    },
+    'about_hardware': {
+      'VI': 'Phần cứng:',
+      'ENG': 'Hardware:',
+      'CN': '硬件规格:',
+    },
+    'about_update_engine': {
+      'VI': 'Cập nhật:',
+      'ENG': 'Updates:',
+      'CN': '在线更新:',
+    },
+    'about_ota_engine_desc': {
+      'VI': 'LAN Over-The-Air Atomic Robocopy Engine',
+      'ENG': 'LAN Over-The-Air Atomic Robocopy Engine',
+      'CN': '局域网 OTA 原子化镜像同步引擎',
+    },
+
+    // --- TopBar & Shell Tooltips ---
+    'topbar_switch_to_cloud': {
+      'VI': 'Bấm để chuyển sang Cloud AI (NVIDIA NIM) · Giữ để mở AI Studio',
+      'ENG': 'Click to switch to Cloud AI · Hold for AI Studio',
+      'CN': '点击切换至云端 AI (NVIDIA NIM) · 长按打开 AI 工作台',
+    },
+    'topbar_switch_to_local': {
+      'VI':
+          'Bấm để chuyển sang Local AI (Qwen GGUF Offline) · Giữ để mở AI Studio',
+      'ENG': 'Click to switch to Local AI · Hold for AI Studio',
+      'CN': '点击切换至本地离线 AI (Qwen GGUF) · 长按打开 AI 工作台',
+    },
+    'topbar_switched_to_local': {
+      'VI': 'Đã chuyển sang Local AI (Qwen GGUF Offline)',
+      'ENG': 'Switched to Local AI (Qwen GGUF Offline)',
+      'CN': '已切换到本地 AI (Qwen GGUF 离线)',
+    },
+    'topbar_switched_to_cloud': {
+      'VI': 'Đã chuyển sang Cloud AI (NVIDIA NIM Gateway)',
+      'ENG': 'Switched to Cloud AI (NVIDIA NIM Gateway)',
+      'CN': '已切换到云端 AI (NVIDIA NIM)',
+    },
+    'topbar_ota_available_tooltip': {
+      'VI': 'Có bản cập nhật mới! Nhấp để cài đặt',
+      'ENG': 'New update available! Click to install',
+      'CN': '发现新版本！点击进行更新',
     },
   };
 }

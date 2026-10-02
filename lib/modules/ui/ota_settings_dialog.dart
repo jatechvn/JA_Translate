@@ -181,8 +181,8 @@ class _OtaSettingsDialogState extends State<OtaSettingsDialog> {
     if (!result.isConnectionSuccess || result.errorMessage != null) {
       setState(() {
         _checkStatusIsSuccess = false;
-        _checkStatusMessage =
-            result.errorMessage ?? 'Không thể kết nối máy chủ';
+        _checkStatusMessage = result.errorMessage ??
+            UiLocalizations.get('ota_connection_failed', widget.uiLang);
       });
       return;
     }
@@ -812,7 +812,7 @@ class _OtaSettingsDialogState extends State<OtaSettingsDialog> {
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
                         child: Text(
-                          UiLocalizations.get('clear', widget.uiLang) == 'XÓA'
+                          widget.uiLang == 'VN'
                               ? 'Đóng'
                               : (widget.uiLang == 'CN' ? '关闭' : 'Close'),
                           style: TextStyle(

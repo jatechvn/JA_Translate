@@ -100,17 +100,9 @@ class _DashboardShellState extends State<DashboardShell> {
     final lang = context.read<LanguageProvider>();
     showAppToast(
       context,
-      message: willBeLocal
-          ? (lang.currentLanguage.code == 'vi'
-              ? 'Đã chuyển sang Local AI (Qwen GGUF Offline)'
-              : (lang.currentLanguage.code == 'zh'
-                  ? '已切换到本地 AI (Qwen GGUF 离线)'
-                  : 'Switched to Local AI (Qwen GGUF Offline)'))
-          : (lang.currentLanguage.code == 'vi'
-              ? 'Đã chuyển sang Cloud AI (NVIDIA NIM Gateway)'
-              : (lang.currentLanguage.code == 'zh'
-                  ? '已切换到云端 AI (NVIDIA NIM)'
-                  : 'Switched to Cloud AI (NVIDIA NIM Gateway)')),
+      message: lang.t(willBeLocal
+          ? 'topbar_switched_to_local'
+          : 'topbar_switched_to_cloud'),
       icon: willBeLocal ? Icons.memory_rounded : Icons.cloud_done_rounded,
       accentColor: willBeLocal
           ? context.read<ThemeProvider>().colors.accentEmerald
@@ -349,13 +341,9 @@ class _DashboardShellState extends State<DashboardShell> {
                 : Icons.cloud_done_rounded,
             customColor:
                 AppConfig.isLocalAi ? colors.accentEmerald : colors.accentCyan,
-            tooltip: AppConfig.isLocalAi
-                ? (language.currentLanguage.code == 'vi'
-                    ? 'Bấm để chuyển sang Cloud AI (NVIDIA NIM) · Giữ để mở AI Studio'
-                    : 'Click to switch to Cloud AI · Hold for AI Studio')
-                : (language.currentLanguage.code == 'vi'
-                    ? 'Bấm để chuyển sang Local AI (Qwen GGUF Offline) · Giữ để mở AI Studio'
-                    : 'Click to switch to Local AI · Hold for AI Studio'),
+            tooltip: language.t(AppConfig.isLocalAi
+                ? 'topbar_switch_to_cloud'
+                : 'topbar_switch_to_local'),
             onTap: _toggleAiEngine,
             onLongPress: () => setState(() => _currentIndex = 3),
           ),
@@ -374,7 +362,7 @@ class _DashboardShellState extends State<DashboardShell> {
               expandedLabel: '🚀 ${_pendingOtaPackage!.version.displayVersion}',
               textColor: colors.accentEmerald,
               isCompact: isCompact,
-              tooltip: 'Có bản cập nhật mới! Nhấp để cài đặt',
+              tooltip: language.t('topbar_ota_available_tooltip'),
               colors: colors,
               onTap: () {
                 showGlassUpdateDialog(

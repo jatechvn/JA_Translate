@@ -77,3 +77,16 @@
 - Trong lượt này user đã chuyển sang preview Qwen PID80852; preview/config.ini engine=gguf_native, qwen_native_migration=1. Không dừng tiến trình hay sửa config gốc.
 - Sửa nhãn Local AI (llama-server) thành Local AI (Qwen) VI/ENG/CN. Format/analyzer sạch, 3 tests UI/ngôn ngữ đạt. Build nhãn vào preview cũ bị khóa vì user đã mở; xuất riêng qwen-label-preview. Chưa click/QA Windows trực quan.
 - Build preview sửa nhãn thành công; CMake JA_BUNDLE_DIR đã trả rỗng.
+
+## Verify báo cáo đa ngôn ngữ — 2026-10-02
+- Read-only review diff và report đính kèm; không sửa implementation. Analyzer sạch; toàn bộ flutter test: 33 passed, 3 skipped (native runtime/DOCX/comparison cần env flags). Log .local_ai_tools/localization-verification.log.
+- P2: dashboard_shell.dart:104-111,353-358 so code vi/zh thay VI/CN, toast/tooltip rơi ENG; các key topbar_switch/switched trong từ điển chưa được dùng tại đó.
+- P2: document_translation_view.dart:125-126 xóa status key và hiển thị p.status thô; translator reading_file/translating_chunk và Python status ENG chưa được bản địa hóa.
+- Coverage: complete_localization_test.dart:96-104 gọi t() có fallback ENG/VI, nên thiếu bản CN vẫn có thể pass. Chưa test UI các nhánh TopBar/progress hoặc QA native Windows. Báo cáo hoàn tất toàn diện chưa được chứng minh.
+
+## Sửa hồi quy đa ngôn ngữ — 2026-10-02
+- dashboard_shell.dart: toast và tooltip chuyển Local/Cloud dùng key dictionary thay so mã vi/zh sai.
+- language_provider.dart: documentProgressText map status Dart/Python hiện có sang key bản địa hóa, giữ counts; unknown status dùng doc_translating. View lưu raw status và counts, render theo locale hiện tại nên đổi ngôn ngữ cập nhật tiến độ.
+- Thêm 9 key VI/ENG/CN, hasTranslation kiểm tra locale trực tiếp không fallback. complete_localization_test kiểm tra entries thật bao gồm key mới. localization_regression_test kiểm tra mọi stage/format/cached/count/error và bấm chuyển cả hai engine tại VI/ENG/CN.
+- Format/analyzer sạch; 6 related tests đạt; kiểm tra dictionary sau mở rộng keys đạt 2/2. Fixture test TopBar ban đầu bị startup migration chọn Local; đã chờ init và thiết lập Cloud trước từng locale, rerun đạt.
+- Flutter Debug build thành công, artifact đã xác minh tại .local_ai_tools/localization-fix-preview. Không dừng app hay ghi đè Release; CMake JA_BUNDLE_DIR trả rỗng. Chưa native Windows visual QA/PDF thực nghiệm ở bản mới; widget và formatter checks đạt.

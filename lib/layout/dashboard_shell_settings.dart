@@ -528,7 +528,7 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
                 const SizedBox(height: 16),
                 _buildSwitchTile(
                   title: lang.t('realtime_translate'),
-                  subtitle: 'Tự động kích hoạt dịch khi dừng gõ văn bản',
+                  subtitle: lang.t('settings_auto_translate'),
                   value: _realtimeTranslate,
                   onChanged: (v) {
                     setState(() => _realtimeTranslate = v);
@@ -538,8 +538,7 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
                 const SizedBox(height: 14),
                 _buildSwitchTile(
                   title: lang.t('btn_pinyin'),
-                  subtitle:
-                      'Hiển thị phiên âm Pinyin khi ngôn ngữ nguồn là Tiếng Trung',
+                  subtitle: lang.t('settings_pinyin_display'),
                   value: _showPinyin,
                   onChanged: (v) {
                     setState(() => _showPinyin = v);
@@ -549,8 +548,7 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
                 const SizedBox(height: 14),
                 _buildSwitchTile(
                   title: lang.t('doc_viet_font_opt'),
-                  subtitle:
-                      'Áp dụng bộ phông chống lỗi dấu khi xuất file PDF và DOCX',
+                  subtitle: lang.t('settings_pdf_fonts'),
                   value: _vietnameseFontOpt,
                   onChanged: (v) {
                     setState(() => _vietnameseFontOpt = v);
@@ -564,7 +562,7 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Ngôn ngữ đích mặc định:',
+                      lang.t('settings_target_lang'),
                       style: TextStyle(
                         color: colors.textPrimary,
                         fontSize: 12.5,
@@ -1153,21 +1151,15 @@ class _SettingsShortcutsAndAboutTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      {'key': 'Ctrl + Enter', 'desc': 'Kích hoạt dịch ngay lập tức'},
-      {'key': 'Ctrl + 1', 'desc': 'Chuyển sang màn hình Dịch Văn bản'},
-      {'key': 'Ctrl + 2', 'desc': 'Chuyển sang màn hình Dịch Tài liệu'},
-      {'key': 'Ctrl + 3', 'desc': 'Chuyển sang màn hình Lịch sử Dịch'},
-      {'key': 'Ctrl + 4', 'desc': 'Chuyển sang màn hình Quản trị AI Studio'},
-      {
-        'key': 'Ctrl + K',
-        'desc': 'Mở Bảng lệnh tác vụ nhanh (Command Palette)'
-      },
-      {
-        'key': 'Ctrl + Shift + L',
-        'desc': 'Chuyển đổi tức thời Giao diện Sáng / Tối'
-      },
-      {'key': 'Ctrl + ,', 'desc': 'Mở Hộp thoại Cài đặt hệ thống'},
-      {'key': 'Ctrl + Shift + S', 'desc': 'Chụp vùng màn hình & Trích chữ OCR'},
+      {'key': 'Ctrl + Enter', 'desc': language.t('shortcut_translate_now')},
+      {'key': 'Ctrl + 1', 'desc': language.t('shortcut_tab_text')},
+      {'key': 'Ctrl + 2', 'desc': language.t('shortcut_tab_doc')},
+      {'key': 'Ctrl + 3', 'desc': language.t('shortcut_tab_history')},
+      {'key': 'Ctrl + 4', 'desc': language.t('shortcut_tab_studio')},
+      {'key': 'Ctrl + K', 'desc': language.t('shortcut_cmd_palette')},
+      {'key': 'Ctrl + Shift + L', 'desc': language.t('shortcut_toggle_theme')},
+      {'key': 'Ctrl + ,', 'desc': language.t('shortcut_open_settings')},
+      {'key': 'Ctrl + Shift + S', 'desc': language.t('shortcut_screen_snip')},
     ];
 
     return SingleChildScrollView(
@@ -1299,23 +1291,23 @@ class _SettingsShortcutsAndAboutTab extends StatelessWidget {
                 const SizedBox(height: 16),
                 Divider(color: colors.subCardBorder, height: 1),
                 const SizedBox(height: 16),
-                _buildInfoRow(
-                    'Tác giả:', 'Jabil Vietnam - Automation & Tooling'),
+                _buildInfoRow(language.t('about_author'),
+                    'Jabil Vietnam - Automation & Tooling'),
                 const SizedBox(height: 8),
-                _buildInfoRow('Cơ chế chạy:',
-                    'Chống mở trùng Mutex (JA_TRANSLATE_MUTEX) Active'),
+                _buildInfoRow(language.t('about_runtime_mode'),
+                    language.t('about_mutex_active')),
                 const SizedBox(height: 8),
                 _buildInfoRow(
-                    'Hệ điều hành:',
+                    language.t('about_os'),
                     theme.isWin11
                         ? 'Windows 11 (Mica / Acrylic DWM)'
                         : 'Windows 10 (Aero Glass DWM)'),
                 const SizedBox(height: 8),
-                _buildInfoRow('Phần cứng:',
+                _buildInfoRow(language.t('about_hardware'),
                     '${theme.perfLabel} (${theme.cpuCores} Cores Detected)'),
                 const SizedBox(height: 8),
-                _buildInfoRow(
-                    'Cập nhật:', 'LAN Over-The-Air Atomic Robocopy Engine'),
+                _buildInfoRow(language.t('about_update_engine'),
+                    language.t('about_ota_engine_desc')),
               ],
             ),
           ),

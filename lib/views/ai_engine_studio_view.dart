@@ -489,12 +489,8 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                             const SizedBox(width: 10),
                             PillBadge(
                               label: loaded
-                                  ? (lang.currentLanguage.code == 'vi'
-                                      ? 'ĐANG CHẠY TRÊN RAM'
-                                      : 'IN-MEMORY')
-                                  : (lang.currentLanguage.code == 'vi'
-                                      ? 'CHỜ NẠP'
-                                      : 'STANDBY'),
+                                  ? lang.tr('ai_status_active_ram')
+                                  : lang.tr('ai_status_standby'),
                               color: loaded
                                   ? colors.accentEmerald
                                   : colors.textMuted,
@@ -512,9 +508,7 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                             if (AppConfig.isLocalAi) ...[
                               const SizedBox(width: 6),
                               PillBadge(
-                                label: lang.currentLanguage.code == 'vi'
-                                    ? 'ĐỘNG CƠ CHÍNH'
-                                    : 'ACTIVE',
+                                label: lang.tr('ai_status_primary_engine'),
                                 color: colors.accentCyan,
                                 bg: colors.accentCyan.withValues(alpha: 0.14),
                                 border:
@@ -679,8 +673,7 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                           setState(() {});
                           showAppToast(
                             context,
-                            message:
-                                'Đã kích hoạt Local AI làm động cơ dịch chính',
+                            message: lang.tr('ai_set_primary_toast'),
                             icon: Icons.check_circle_rounded,
                             accentColor: colors.accentEmerald,
                           );
@@ -696,9 +689,9 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                             borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.check_circle_rounded, size: 17),
-                      label: const Text(
-                        'Đặt làm Động cơ chính',
-                        style: TextStyle(
+                      label: Text(
+                        lang.tr('ai_set_primary_btn'),
+                        style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 12.5),
                       ),
                     ),
@@ -735,26 +728,27 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                   colors: colors,
                   icon: Icons.speed_rounded,
                   iconColor: colors.accentCyan,
-                  title: 'Phần cứng & Xử lý',
+                  title: lang.tr('ai_hw_compute_title'),
                   value: 'CPU · 4 Threads',
-                  subtitle: 'Native C++ · Q4_K_M Quantized',
+                  subtitle: lang.tr('ai_hw_compute_desc'),
                 ),
                 _buildNativeMetricCard(
                   colors: colors,
                   icon: Icons.pie_chart_rounded,
                   iconColor: colors.accentPurple,
-                  title: 'Tài nguyên & RAM',
+                  title: lang.tr('ai_res_ram_title'),
                   value: '$fileSizeMiB MiB',
-                  subtitle:
-                      loaded ? 'Đang chiếm ~1.1 GB RAM' : 'Giải phóng khi rảnh',
+                  subtitle: loaded
+                      ? lang.tr('ai_res_ram_occupied')
+                      : lang.tr('ai_res_ram_idle'),
                 ),
                 _buildNativeMetricCard(
                   colors: colors,
                   icon: Icons.text_snippet_rounded,
                   iconColor: colors.accentAmber,
-                  title: 'Cửa sổ Ngữ cảnh',
+                  title: lang.tr('ai_context_title'),
                   value: '4,096 Tokens',
-                  subtitle: 'Khuyên dùng ≤ 3,072 tokens/đoạn',
+                  subtitle: lang.tr('ai_context_hint'),
                 ),
               ],
             );
@@ -785,7 +779,7 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Cần dịch tài liệu lớn hoặc mô hình mạnh hơn?',
+                      lang.tr('ai_cloud_bridge_title'),
                       style: TextStyle(
                         color: colors.textPrimary,
                         fontSize: 13,
@@ -794,7 +788,7 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Cloud AI (NVIDIA NIM Gateway / Qwen 2.5 70B) hỗ trợ dịch tốc độ cao và ngữ cảnh mở rộng.',
+                      lang.tr('ai_cloud_bridge_desc'),
                       style: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 11.5,
@@ -816,9 +810,9 @@ class _AiEngineStudioViewState extends State<AiEngineStudioView>
                       borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 15),
-                label: const Text('Xem Cloud AI',
-                    style:
-                        TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                label: Text(lang.tr('ai_cloud_bridge_btn'),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 12)),
               ),
             ],
           ),

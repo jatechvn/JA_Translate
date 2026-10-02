@@ -51,18 +51,20 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
   void _clearAllHistory() {
     final theme = context.read<ThemeProvider>();
     final colors = theme.colors;
+    final lang = context.read<LanguageProvider>();
 
     showDialog(
       context: context,
       builder: (ctx) => GlassDialog(
-        title: 'Xóa Toàn Bộ Lịch Sử',
+        title: lang.t('history_clear_title'),
         icon: Icons.delete_sweep_rounded,
         isDark: theme.isDark,
         width: 440,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Hủy', style: TextStyle(color: colors.textSecondary)),
+            child: Text(lang.t('history_clear_cancel_btn'),
+                style: TextStyle(color: colors.textSecondary)),
           ),
           FilledButton.icon(
             onPressed: () {
@@ -72,13 +74,13 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
               });
               showAppToast(
                 context,
-                message: 'Đã xóa toàn bộ lịch sử!',
+                message: lang.t('history_clear_success_toast'),
                 icon: Icons.check_circle_outline_rounded,
                 accentColor: colors.accentEmerald,
               );
             },
             icon: const Icon(Icons.delete_outline, size: 16),
-            label: const Text('Xác Nhận Xóa'),
+            label: Text(lang.t('history_clear_confirm_btn')),
             style: FilledButton.styleFrom(
               backgroundColor: colors.accentRose,
               foregroundColor: Colors.white,
@@ -86,7 +88,7 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
           ),
         ],
         child: Text(
-          'Bạn có chắc chắn muốn xóa toàn bộ lịch sử dịch không? Thao tác này không thể hoàn tác.',
+          lang.t('history_clear_confirm_msg'),
           style: TextStyle(fontSize: 13, color: colors.textPrimary),
         ),
       ),
@@ -178,7 +180,7 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Đã Lưu',
+                        lang.t('history_saved_filter'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight:
@@ -296,7 +298,7 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
                               item.text, item.srcLang, item.tgtLang);
                           showAppToast(
                             context,
-                            message: 'Đã đưa vào khung dịch!',
+                            message: lang.t('history_restored_toast'),
                             icon: Icons.check_rounded,
                             accentColor: colors.accentEmerald,
                           );
