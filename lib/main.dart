@@ -18,6 +18,7 @@ import 'modules/translation_history.dart';
 import 'modules/desktop_service.dart';
 import 'modules/window_helper.dart';
 import 'modules/build_info.dart';
+import 'modules/power_coordinator.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +68,7 @@ class JaTranslateApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => PowerCoordinator.instance),
       ],
       child: const _AppContent(),
     );
@@ -79,6 +81,7 @@ class _AppContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    final power = context.watch<PowerCoordinator>();
     final colors = theme.colors;
     final effectiveTitle = (!kIsWeb && Platform.isWindows && !theme.isWin11)
         ? ''
@@ -92,6 +95,18 @@ class _AppContent extends StatelessWidget {
         brightness: theme.isDark ? Brightness.dark : Brightness.light,
         scaffoldBackgroundColor: Colors.transparent,
       ),
+      builder: (context, child) {
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => power.recordUserActivity(),
+          onPointerMove: (_) => power.recordUserActivity(),
+          onPointerSignal: (_) => power.recordUserActivity(),
+          child: TickerMode(
+            enabled: power.isUiActive,
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
       home: Builder(
         builder: (ctx) {
           return CommandPaletteShortcut(

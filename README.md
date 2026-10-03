@@ -1,6 +1,6 @@
 # JA Translate
 
-[![Version](https://img.shields.io/badge/version-1.2.1-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
+[![Version](https://img.shields.io/badge/version-1.2.2-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
 [![Flutter](https://img.shields.io/badge/flutter-3.x-teal.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg)](https://github.com/jatechvn/JA_Translate)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](ABOUT.txt)
@@ -12,6 +12,7 @@
 ## ✨ Tính năng nổi bật
 
 - 💎 **Fluent Frosted Glass Bento UI:** Thiết kế hiện đại chuẩn phong cách Bento Grid từ `flutter_ui_template`, nền kính sữa mờ cao cấp chống chói, tối ưu WCAG AAA và hỗ trợ hiệu ứng DWM Aero / Acrylic native.
+- ⚡ **Tối ưu hóa Năng lượng (Flutter Power Optimizer):** Triệt tiêu hoàn toàn nhịp vẽ GPU và AnimationController khi ứng dụng mất focus, thu nhỏ Taskbar hoặc ẩn trong Tray. Tự động tạm dừng hoạt ảnh làm mờ nặng khi nhàn rỗi > 12s, đưa GPU Engine về ~0.0%.
 - 🔄 **1-Tap Quick AI Engine Switcher:** Hoán đổi tức thì giữa Local AI (Qwen GGUF Offline) và Cloud AI (NVIDIA NIM Gateway) ngay từ thanh tiêu đề.
 - ⚡ **Offline Local AI Engine:** Tích hợp backend `llama-server` chạy mô hình Qwen 2.5 1.5B Instruct siêu nhẹ, dịch ngoại tuyến 100% riêng tư không cần Internet.
 - 🌐 **Hỗ trợ Đa ngôn ngữ (VI / ENG / CN):** Chuyển đổi giao diện 1-chạm giữa Tiếng Việt, Tiếng Anh và Tiếng Trung với từ điển đầy đủ không sót ký tự.
@@ -25,17 +26,21 @@
 
 ## 🚀 Cài đặt nhanh
 
-1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.1_Windows_x64.zip`.
+1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.2_Windows_x64.zip`.
 2. Giải nén file `.zip` vào thư mục bất kỳ.
 3. Chạy file `ja_translate.exe` để bắt đầu sử dụng.
 
 ---
 
-## 📝 Thay đổi gần đây (v1.2.1)
+## 📝 Thay đổi gần đây (v1.2.2)
 
-- **Chuẩn hóa Đa ngôn ngữ Toàn diện (VI/ENG/CN):** Loại bỏ hoàn toàn các chuỗi ký tự cố định, đưa vào từ điển động ở Lịch sử, AI Studio, Dịch tài liệu, Dịch văn bản, Phím tắt và Cài đặt.
-- **Nâng cấp độ ổn định & Kiểm thử:** Bổ sung bộ test tự động đối soát toàn bộ từ điển và tiến trình dịch, 35/35 tests pass 100%.
-- **Bảo toàn giao diện & Phím tắt:** Đồng bộ 9 phím tắt hệ thống và bảng chẩn đoán About đa ngữ.
+- **Tối Ưu Hóa Năng Lượng & Giảm Tải GPU/CPU (Flutter Desktop Power Optimizer):**
+  - Tích hợp bộ điều phối `PowerCoordinator` quản lý tập trung trạng thái hiển thị, focus, thu nhỏ và nhàn rỗi (timeout 12s).
+  - Cổng `TickerMode` toàn cục tại `MaterialApp.builder` ngắt hoàn toàn hoạt ảnh và nhịp render GPU khi ứng dụng ẩn/mất focus.
+  - Tạm dừng chuyển động Gaussian Blur 85px của `MeshOrb` khi nhàn rỗi, đưa GPU Engine về ~0.0% mà UI vẫn phản hồi tức thì khi di chuột.
+  - Đồng bộ chuẩn xác các sự kiện `WindowListener` và bảo toàn 100% tác vụ nghiệp vụ nền (Dịch thuật, phím tắt, OTA).
+- **Session Epoch & Tối ưu polling:** Thêm epoch guard cho `AsymmetricMarqueeText` và bỏ qua thăm dò `_aiStatusTimer` khi không active.
+- **Kiểm thử tự động chuyên sâu:** Bổ sung `test/power_coordinator_test.dart`, nâng tổng số ca kiểm thử tự động lên **45/45 tests passed 100%**.
 
 ---
 

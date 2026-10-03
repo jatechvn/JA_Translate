@@ -29,17 +29,17 @@ class _MeshOrbState extends State<MeshOrb> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // Stops the drift while the window is minimized/hidden, mirroring the
-    // Page Visibility low-power sleep mode added to UI_DESIGN_Sample.html
-    // (`visibilitychange` -> orb.animationPlayState = 'paused', 0% background CPU).
+    PowerCoordinator.instance.addListener(_onPowerStateChanged);
     _lifecycleListener = AppLifecycleListener(
       onStateChange: (state) {
         switch (state) {
           case AppLifecycleState.hidden:
           case AppLifecycleState.paused:
-            _controller.stop();
+            _pauseDrift();
           case AppLifecycleState.resumed:
-            _controller.repeat(reverse: true);
+            if (PowerCoordinator.instance.isDecorActive) {
+              _resumeDrift();
+            }
           case AppLifecycleState.inactive:
           case AppLifecycleState.detached:
             break;
@@ -48,8 +48,30 @@ class _MeshOrbState extends State<MeshOrb> with SingleTickerProviderStateMixin {
     );
   }
 
+  void _onPowerStateChanged() {
+    if (!mounted) return;
+    if (PowerCoordinator.instance.isDecorActive) {
+      _resumeDrift();
+    } else {
+      _pauseDrift();
+    }
+  }
+
+  void _pauseDrift() {
+    if (_controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  void _resumeDrift() {
+    if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
   @override
   void dispose() {
+    PowerCoordinator.instance.removeListener(_onPowerStateChanged);
     _lifecycleListener.dispose();
     _controller.dispose();
     super.dispose();

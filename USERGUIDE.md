@@ -1,13 +1,13 @@
-# Hướng dẫn sử dụng JA Translate v1.2.1
+# Hướng dẫn sử dụng JA Translate v1.2.2
 
-Chào mừng bạn đến với **JA Translate v1.2.1** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến và nhận diện hình ảnh thông minh dành riêng cho hệ điều hành Windows x64.
+Chào mừng bạn đến với **JA Translate v1.2.2** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến, nhận diện hình ảnh thông minh và công nghệ tối ưu hóa năng lượng tự động dành riêng cho hệ điều hành Windows x64.
 
 ---
 
 ## 📦 1. Cài đặt & Khởi chạy
 
-1. Tải về file nén `JA_Translate_v1.2.1_Windows_x64.zip`.
-2. Giải nén toàn bộ thư mục `JA_Translate_v1.2.1_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
+1. Tải về file nén `JA_Translate_v1.2.2_Windows_x64.zip`.
+2. Giải nén toàn bộ thư mục `JA_Translate_v1.2.2_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
 3. Khởi chạy tập tin `ja_translate.exe` (hoặc chạy `debug.bat` nếu muốn xem log console).
 4. *Lưu ý:* Ứng dụng chạy ở chế độ Portable độc lập, toàn bộ cấu hình và dữ liệu model được lưu ngay trong thư mục của ứng dụng mà không làm rác hệ điều hành. Ngoài ra, trong thư mục giải nén có kèm file `install.bat` và `uninstall.bat` giúp tạo/xóa shortcut Desktop & Start Menu thuận tiện mà không cần quyền Admin.
 
@@ -36,6 +36,11 @@ Chào mừng bạn đến với **JA Translate v1.2.1** — Phần mềm dịch 
 - **Quy trình OCR đa tầng:** 
   - Hệ thống tự động phân tích ảnh và trích xuất chữ viết bằng Tesseract OCR cục bộ.
   - Khi cấu hình Vision AI, hệ thống sẽ phân tích ngữ cảnh hình ảnh để dịch chính xác các biển hiệu, truyện tranh, tài liệu chữ Hán phức tạp.
+
+### ⚡ 2.5. Tự Động Tối Ưu Năng Lượng & Giảm Tải GPU/CPU (Power Optimizer)
+- **Chế độ Nhàn rỗi Thông minh (Idle Sleep > 12s):** Khi bạn không chạm chuột hoặc gõ phím quá 12 giây, ứng dụng tự động đóng băng các hoạt ảnh làm mờ nền nặng (`MeshOrb`), đưa GPU Engine về ~0.0% giúp tiết kiệm pin laptop và giảm nhiệt độ máy tính. Ngay khi bạn di chuột lại, hiệu ứng chuyển động mượt mà trở lại tức thì.
+- **Tự động ngắt nhịp render khi mất focus / ẩn Tray:** Khi bạn làm việc trên các cửa sổ khác hoặc thu nhỏ/ẩn ứng dụng vào khay hệ thống (System Tray), toàn bộ nhịp vẽ GPU được ngắt hoàn toàn.
+- **Bảo toàn tác vụ nền:** Các tiến trình dịch AI cục bộ, lắng nghe Clipboard và phím tắt toàn cầu (`Alt+Q`, `Alt+S`) tiếp tục hoạt động liên tục mà không bị gián đoạn.
 
 ---
 

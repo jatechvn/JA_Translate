@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:ja_translate/theme/language_provider.dart';
 import 'package:ja_translate/theme/theme_provider.dart';
 import 'package:ja_translate/layout/dashboard_shell.dart';
+import 'package:ja_translate/modules/power_coordinator.dart';
 
 void main() {
   testWidgets(
@@ -13,6 +14,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(PowerCoordinator.instance.cancelIdleTimer);
 
     final language = LanguageProvider(initialLang: 'ENG');
     final theme = ThemeProvider(initialMode: 'dark');
@@ -77,6 +79,7 @@ void main() {
     expect(find.text(testText), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
+    PowerCoordinator.instance.cancelIdleTimer();
     language.dispose();
     theme.dispose();
   });

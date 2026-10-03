@@ -34,6 +34,7 @@ class AsymmetricMarqueeText extends StatefulWidget {
 class _AsymmetricMarqueeTextState extends State<AsymmetricMarqueeText> {
   final ScrollController _scrollController = ScrollController();
   Timer? _timer;
+  int _epoch = 0;
   bool _isDisposed = false;
 
   @override
@@ -50,6 +51,7 @@ class _AsymmetricMarqueeTextState extends State<AsymmetricMarqueeText> {
   void didUpdateWidget(covariant AsymmetricMarqueeText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
+      _epoch++;
       _timer?.cancel();
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
@@ -73,12 +75,18 @@ class _AsymmetricMarqueeTextState extends State<AsymmetricMarqueeText> {
     final maxScroll = _scrollController.position.maxScrollExtent;
     if (maxScroll <= 0) return;
 
-    _timer = Timer(widget.pauseStart, _animateForward);
+    final currentEpoch = ++_epoch;
+    _timer = Timer(widget.pauseStart, () => _animateForward(currentEpoch));
   }
 
-  void _animateForward() {
+  void _animateForward(int expectedEpoch) {
     _timer?.cancel();
-    if (_isDisposed || !mounted || !_scrollController.hasClients) return;
+    if (_isDisposed ||
+        !mounted ||
+        _epoch != expectedEpoch ||
+        !_scrollController.hasClients) {
+      return;
+    }
     final maxScroll = _scrollController.position.maxScrollExtent;
     if (maxScroll <= 0) return;
 
@@ -92,14 +100,19 @@ class _AsymmetricMarqueeTextState extends State<AsymmetricMarqueeText> {
     _scrollController
         .animateTo(maxScroll, duration: duration, curve: widget.forwardCurve)
         .then((_) {
-      if (_isDisposed || !mounted) return;
-      _timer = Timer(widget.pauseEnd, _animateReturn);
+      if (_isDisposed || !mounted || _epoch != expectedEpoch) return;
+      _timer = Timer(widget.pauseEnd, () => _animateReturn(expectedEpoch));
     });
   }
 
-  void _animateReturn() {
+  void _animateReturn(int expectedEpoch) {
     _timer?.cancel();
-    if (_isDisposed || !mounted || !_scrollController.hasClients) return;
+    if (_isDisposed ||
+        !mounted ||
+        _epoch != expectedEpoch ||
+        !_scrollController.hasClients) {
+      return;
+    }
     final maxScroll = _scrollController.position.maxScrollExtent;
     if (maxScroll <= 0) return;
 
@@ -113,13 +126,14 @@ class _AsymmetricMarqueeTextState extends State<AsymmetricMarqueeText> {
     _scrollController
         .animateTo(0, duration: duration, curve: widget.returnCurve)
         .then((_) {
-      if (_isDisposed || !mounted) return;
-      _timer = Timer(widget.pauseStart, _animateForward);
+      if (_isDisposed || !mounted || _epoch != expectedEpoch) return;
+      _timer = Timer(widget.pauseStart, () => _animateForward(expectedEpoch));
     });
   }
 
   @override
   void dispose() {
+    _epoch++;
     _isDisposed = true;
     _timer?.cancel();
     _scrollController.dispose();

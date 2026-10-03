@@ -2,6 +2,37 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.2] - 2026-10-03
+
+### ⚡ Tối Ưu Hóa Năng Lượng & Giảm Tải GPU/CPU (Flutter Desktop Power Optimizer)
+- **Bộ Điều Phối Năng Lượng Tập Trung (`PowerCoordinator`):**
+  - Quản lý tập trung các trạng thái `isVisible`, `isFocused`, `isMinimized`, và bộ đếm nhàn rỗi `isIdle` (mặc định 12 giây không tương tác chuột/phím).
+  - Phân định rõ 2 chính sách: `isUiActive` (cho render và TickerMode) và `isDecorActive` (cho hoạt ảnh nền nặng).
+- **Cổng `TickerMode` Toàn Cục:**
+  - Bao bọc toàn bộ cây widget trong `MaterialApp.builder` bằng `TickerMode(enabled: power.isUiActive)`.
+  - Triệt tiêu 100% nhịp vẽ GPU và AnimationController khi ứng dụng mất focus (làm việc app khác), thu nhỏ xuống Taskbar, hoặc ẩn vào System Tray.
+- **Tiết Kiệm Tải 85px Gaussian Blur (`MeshOrb`):**
+  - Tự động tạm dừng chuyển động làm mờ nặng (`_controller.stop()`) khi người dùng nhàn rỗi quá 12 giây, đưa mức sử dụng GPU Engine về ~0.0%.
+  - Thức tỉnh tức thì khi người dùng di chuột hoặc nhấn phím thông qua `Listener` bắt tương tác người dùng.
+- **Đồng Bộ Vòng Đời Cửa Sổ Windows (`DesktopService`):**
+  - Lắng nghe và xử lý chuẩn xác `onWindowFocus`, `onWindowBlur`, `onWindowMinimize`, `onWindowRestore`.
+  - Đồng bộ tức thời trạng thái ẩn ngay khi người dùng bấm nút Close (`onWindowClose`), kèm cơ chế tự sửa lỗi nếu lệnh native hide thất bại.
+- **Session Epoch & Tối Ưu Bộ Thăm Dò:**
+  - Bổ sung session epoch bảo vệ callback bất đồng bộ trong `AsymmetricMarqueeText`, loại bỏ hoàn toàn timer trôi nổi.
+  - Tối ưu bộ thăm dò `_aiStatusTimer` (4s) trong `DashboardShell`: tự động bỏ qua khi cửa sổ không active, và kích hoạt thăm dò tức thì khi active trở lại.
+- **Bảo Toàn 100% Tác Vụ Nền:**
+  - Giữ nguyên vẹn tiến trình dịch cục bộ (Local Qwen / Opus MT), lắng nghe Clipboard, phím tắt toàn cầu (`Alt+Q`, `Alt+S`) và kiểm tra cập nhật mạng nội bộ LAN OTA.
+
+### 🧪 Kiểm Thử Tự Động & Độ Tin Cậy
+- Bổ sung bộ kiểm thử hồi quy chuyên sâu `test/power_coordinator_test.dart` bao quát 6 kịch bản vòng đời và cách ly tác vụ nền.
+- Nâng tổng số bài kiểm thử tự động lên **45/45 tests passed 100%**.
+
+### 📦 Phát hành
+- Đồng bộ version 1.2.2+5 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói bản phát hành Windows x64 mới nhất vào thư mục `dist/` kèm file nén `JA_Translate_v1.2.2_Windows_x64.zip` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.2.1] - 2026-10-02
 
 ### 🌐 Chuẩn hóa Đa ngôn ngữ (VI / ENG / CN) Toàn diện

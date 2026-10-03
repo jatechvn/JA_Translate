@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../theme/styles_win10.dart';
+import '../modules/power_coordinator.dart';
 
 export 'glass_dropdown.dart';
 

@@ -11,6 +11,7 @@ import '../modules/app_config.dart';
 import '../modules/engine_readiness.dart';
 import '../modules/ota_update_service.dart';
 import '../modules/llama_service.dart';
+import '../modules/power_coordinator.dart';
 import '../modules/ui/app_shortcuts.dart';
 import '../modules/ui/glass_update_dialog.dart';
 import '../widgets/glass_widgets.dart';
@@ -64,20 +65,30 @@ class _DashboardShellState extends State<DashboardShell> {
   void initState() {
     super.initState();
     AppConfig.changes.addListener(_onConfigurationChanged);
+    PowerCoordinator.instance.addListener(_onPowerStateChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkOtaOnStartup();
       _checkAiStatus();
     });
     _aiStatusTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      _checkAiStatus();
+      if (PowerCoordinator.instance.isUiActive) {
+        _checkAiStatus();
+      }
     });
   }
 
   @override
   void dispose() {
     AppConfig.changes.removeListener(_onConfigurationChanged);
+    PowerCoordinator.instance.removeListener(_onPowerStateChanged);
     _aiStatusTimer?.cancel();
     super.dispose();
+  }
+
+  void _onPowerStateChanged() {
+    if (mounted && PowerCoordinator.instance.isUiActive) {
+      _checkAiStatus();
+    }
   }
 
   void _onConfigurationChanged() {

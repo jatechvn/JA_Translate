@@ -11,6 +11,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'llama_service.dart';
+import 'power_coordinator.dart';
 
 // Win32 FFI for high-speed, zero-CPU clipboard monitoring
 final DynamicLibrary? _user32 =
@@ -76,6 +77,18 @@ class DesktopService with TrayListener, WindowListener {
       trayManager.addListener(this);
       windowManager.addListener(this);
 
+      // Synchronize initial native visibility and focus
+      try {
+        final isVis = await windowManager.isVisible();
+        final isFoc = await windowManager.isFocused();
+        final isMin = await windowManager.isMinimized();
+        PowerCoordinator.instance.syncNativeState(
+          isVisible: isVis,
+          isFocused: isFoc,
+          isMinimized: isMin,
+        );
+      } catch (_) {}
+
       // Set tray icon (use default or app icon)
       try {
         final exeDir = File(Platform.resolvedExecutable).parent.path;
@@ -99,6 +112,9 @@ class DesktopService with TrayListener, WindowListener {
 
   static Future<void> bringToFront() async {
     try {
+      PowerCoordinator.instance.setWindowVisibility(true);
+      PowerCoordinator.instance.setWindowMinimized(false);
+
       // 1. Explicitly ensure taskbar presence is not suppressed
       await windowManager.setSkipTaskbar(false);
 
@@ -117,6 +133,7 @@ class DesktopService with TrayListener, WindowListener {
       // 4. Show and focus window
       await windowManager.show();
       await windowManager.focus();
+      PowerCoordinator.instance.setWindowFocus(true);
 
       // 5. Force foreground activation over other apps via momentary alwaysOnTop pulse
       try {
@@ -225,8 +242,38 @@ if (\$img -ne \$null) {
   void onWindowClose() async {
     final isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
-      await windowManager.hide();
+      // Immediately tell coordinator that window is hidden
+      PowerCoordinator.instance.setWindowVisibility(false);
+      try {
+        await windowManager.hide();
+      } catch (e) {
+        debugPrint('windowManager.hide failed: $e');
+        try {
+          final isVis = await windowManager.isVisible();
+          PowerCoordinator.instance.setWindowVisibility(isVis);
+        } catch (_) {}
+      }
     }
+  }
+
+  @override
+  void onWindowFocus() {
+    PowerCoordinator.instance.setWindowFocus(true);
+  }
+
+  @override
+  void onWindowBlur() {
+    PowerCoordinator.instance.setWindowFocus(false);
+  }
+
+  @override
+  void onWindowMinimize() {
+    PowerCoordinator.instance.setWindowMinimized(true);
+  }
+
+  @override
+  void onWindowRestore() {
+    PowerCoordinator.instance.setWindowMinimized(false);
   }
 
   /// Launch Windows native Snipping Tool and capture result from Clipboard
