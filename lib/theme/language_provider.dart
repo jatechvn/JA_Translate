@@ -1302,6 +1302,18 @@ class LanguageProvider extends ChangeNotifier {
       'ENG': 'Apply anti-font-bleed fonts for PDF and DOCX exports',
       'CN': '导出 PDF 和 DOCX 时应用防乱码字体',
     },
+    'minimize_to_tray_title': {
+      'VI': 'Thu nhỏ vào khay hệ thống khi đóng',
+      'ENG': 'Minimize to system tray on close',
+      'CN': '关闭时最小化到系统托盘',
+    },
+    'minimize_to_tray_sub': {
+      'VI':
+          'Khi đóng (nút X), thu nhỏ xuống khay Taskbar để dùng phím tắt Alt+Q / Alt+S. Tắt tùy chọn này sẽ thoát hoàn toàn ứng dụng.',
+      'ENG':
+          'When clicking X, minimize to system tray to keep shortcuts Alt+Q / Alt+S active. If disabled, closing the window exits the application completely.',
+      'CN': '点击 X 关闭按钮时最小化到托盘以保持快捷键 Alt+Q / Alt+S 生效。关闭此项将在点击关闭时完全退出程序。',
+    },
     'settings_target_lang': {
       'VI': 'Ngôn ngữ đích mặc định:',
       'ENG': 'Default Target Language:',

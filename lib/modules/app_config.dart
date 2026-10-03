@@ -120,6 +120,7 @@ class AppConfig {
       'ui_lang': 'VN',
       'active_provider': 'cloud',
       'enable_transparency': 'true',
+      'minimize_to_tray_on_close': 'false',
     };
     _sections['PROXY'] = {
       'enabled': 'false',
@@ -169,6 +170,8 @@ class AppConfig {
     _sections['SETTINGS']!.putIfAbsent('ui_lang', () => 'VN');
     _sections['SETTINGS']!.putIfAbsent('active_provider', () => 'cloud');
     _sections['SETTINGS']!.putIfAbsent('enable_transparency', () => 'true');
+    _sections['SETTINGS']!
+        .putIfAbsent('minimize_to_tray_on_close', () => 'false');
 
     if (!_sections.containsKey('PROXY')) _sections['PROXY'] = {};
     _sections['PROXY']!.putIfAbsent('enabled', () => 'false');

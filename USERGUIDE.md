@@ -1,13 +1,13 @@
-# Hướng dẫn sử dụng JA Translate v1.2.3
+# Hướng dẫn sử dụng JA Translate v1.2.4
 
-Chào mừng bạn đến với **JA Translate v1.2.3** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến, nhận diện hình ảnh thông minh và công nghệ tối ưu hóa năng lượng tự động dành riêng cho hệ điều hành Windows x64.
+Chào mừng bạn đến với **JA Translate v1.2.4** — Phần mềm dịch thuật cao cấp, tích hợp AI ngoại tuyến, nhận diện hình ảnh thông minh và công nghệ tối ưu hóa năng lượng tự động dành riêng cho hệ điều hành Windows x64.
 
 ---
 
 ## 📦 1. Cài đặt & Khởi chạy
 
-1. Tải về file nén `JA_Translate_v1.2.3_Windows_x64.zip`.
-2. Giải nén toàn bộ thư mục `JA_Translate_v1.2.3_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
+1. Tải về file nén `JA_Translate_v1.2.4_Windows_x64.zip`.
+2. Giải nén toàn bộ thư mục `JA_Translate_v1.2.4_Windows_x64` ra vị trí thuận tiện (ví dụ: `D:\Apps\JA_Translate` hoặc `C:\JA_Translate`).
 3. Khởi chạy tập tin `ja_translate.exe` (hoặc chạy `debug.bat` nếu muốn xem log console).
 4. *Lưu ý:* Ứng dụng chạy ở chế độ Portable độc lập, toàn bộ cấu hình và dữ liệu model được lưu ngay trong thư mục của ứng dụng mà không làm rác hệ điều hành. Ngoài ra, trong thư mục giải nén có kèm file `install.bat` và `uninstall.bat` giúp tạo/xóa shortcut Desktop & Start Menu thuận tiện mà không cần quyền Admin.
 
@@ -41,6 +41,11 @@ Chào mừng bạn đến với **JA Translate v1.2.3** — Phần mềm dịch 
 - **Chế độ Nhàn rỗi Thông minh (Idle Sleep > 12s):** Khi bạn không chạm chuột hoặc gõ phím quá 12 giây, ứng dụng tự động đóng băng các hoạt ảnh làm mờ nền nặng (`MeshOrb`), đưa GPU Engine về ~0.0% giúp tiết kiệm pin laptop và giảm nhiệt độ máy tính. Ngay khi bạn di chuột lại, hiệu ứng chuyển động mượt mà trở lại tức thì.
 - **Tự động ngắt nhịp render khi mất focus / ẩn Tray:** Khi bạn làm việc trên các cửa sổ khác hoặc thu nhỏ/ẩn ứng dụng vào khay hệ thống (System Tray), toàn bộ nhịp vẽ GPU được ngắt hoàn toàn.
 - **Bảo toàn tác vụ nền:** Các tiến trình dịch AI cục bộ, lắng nghe Clipboard và phím tắt toàn cầu (`Alt+Q`, `Alt+S`) tiếp tục hoạt động liên tục mà không bị gián đoạn.
+
+### 🛡️ 2.6. Quản Lý Đóng Cửa Sổ & Khay Hệ Thống (Window Close & System Tray)
+- **Thoát sạch mặc định:** Khi bạn bấm nút **[X]** trên thanh tiêu đề, ứng dụng sẽ tự động dọn dẹp tiến trình con (`llama-server.exe`) và thoát hoàn toàn khỏi hệ điều hành, không để lại tiến trình ma trong Windows Task Manager.
+- **Tùy chọn chạy ngầm linh hoạt:** Nếu bạn muốn giữ app luôn sẵn sàng để bấm phím tắt toàn cục `Alt + Q` (Mở nhanh) hoặc `Alt + S` (Chụp màn hình dịch), bạn chỉ cần vào **Cài đặt Chung** và bật tùy chọn *"Thu nhỏ vào khay hệ thống khi đóng"*. Khi đó, bấm nút [X] sẽ thu nhỏ ứng dụng xuống khay Taskbar.
+- **Thoát dứt điểm từ Tray:** Khi app đang ở khay Taskbar, chỉ cần nhấp chuột phải vào biểu tượng khay và chọn **Exit** để thoát hoàn toàn mọi tiến trình.
 
 ---
 

@@ -1,6 +1,6 @@
 # JA Translate
 
-[![Version](https://img.shields.io/badge/version-1.2.3-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
+[![Version](https://img.shields.io/badge/version-1.2.4-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
 [![Flutter](https://img.shields.io/badge/flutter-3.x-teal.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg)](https://github.com/jatechvn/JA_Translate)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](ABOUT.txt)
@@ -26,20 +26,21 @@
 
 ## 🚀 Cài đặt nhanh
 
-1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.3_Windows_x64.zip`.
+1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.4_Windows_x64.zip`.
 2. Giải nén file `.zip` vào thư mục bất kỳ.
 3. Chạy file `ja_translate.exe` để bắt đầu sử dụng.
 
 ---
 
-## 📝 Thay đổi gần đây (v1.2.3)
+## 📝 Thay đổi gần đây (v1.2.4)
 
-- **Chuẩn hóa Tiêu đề Cửa sổ & Windows Metadata (App Name Alignment):**
-  - Khởi tạo cửa sổ trong `windows/runner/main.cpp` với tiêu đề `JA Translate` thay vì tên file exe `ja_translate`.
-  - Cập nhật PE Metadata (`Runner.rc`): `FileDescription` và `ProductName` đổi thành `JA Translate`, giúp Windows Task Manager và Alt+Tab hiển thị đúng tên app thương hiệu.
-  - Cố định tiêu đề cửa sổ `JA Translate  v1.2.3` trên mọi phiên bản Windows.
-- **Tối ưu hóa năng lượng tự động:** Triệt tiêu nhịp vẽ GPU khi ẩn/nhàn rỗi (Power Optimizer).
-- **Kiểm thử tự động toàn diện:** 45/45 tests passed 100%.
+- **Khắc phục Cơ chế Cập nhật LAN OTA & Tự động hóa Manifest:**
+  - `OtaUpdateService` quét thông minh song song `version.json` và các gói zip, luôn chọn phiên bản cao nhất, không bị nghẽn bởi file json cũ.
+  - Tự động sinh `version.json` trong `dist/` khi đóng gói phát hành.
+- **Tối ưu Quy trình Thoát Sạch & Quản lý Cửa sổ (Clean Termination):**
+  - Tự động dọn sạch `llama-server.exe` và thoát toàn diện với `exit(0)`, triệt tiêu hoàn toàn tiến trình treo trong Task Manager khi đóng ứng dụng.
+  - Bổ sung tùy chọn Cài đặt: Cho phép người dùng linh hoạt chọn *"Thu nhỏ vào khay hệ thống khi đóng"* (mặc định tắt: bấm [X] thoát sạch).
+- **Kiểm thử tự động toàn diện:** 46/46 tests passed 100%.
 
 ---
 

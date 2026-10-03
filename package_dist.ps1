@@ -83,5 +83,25 @@ $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLower()
 $checksumFile = Join-Path $dist "SHA256SUMS.txt"
 "${hash}  ${packDirName}.zip" | Out-File -FilePath $checksumFile -Encoding utf8 -Force
 
+Write-Host "Generating version.json for LAN OTA update metadata..." -ForegroundColor Cyan
+$versionJsonPath = Join-Path $dist "version.json"
+$releaseNotesText = "JA Translate v${version}"
+$releaseNotesPath = Join-Path $root "RELEASE_NOTES.md"
+if (Test-Path $releaseNotesPath) {
+    $rnContent = Get-Content $releaseNotesPath -Raw
+    if ($rnContent -match '(?m)^TITLE=(.+)$') {
+        $releaseNotesText = $matches[1].Trim()
+    }
+}
+$verData = [ordered]@{
+    version = $version
+    fileName = "${packDirName}.zip"
+    releaseDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    releaseNotes = $releaseNotesText
+}
+$verJsonContent = $verData | ConvertTo-Json -Compress
+[System.IO.File]::WriteAllText($versionJsonPath, $verJsonContent, [System.Text.Encoding]::UTF8)
+Copy-Item -Path $versionJsonPath -Destination (Join-Path $targetDir "version.json") -Force
+
 Write-Host "Dist packaging completed successfully!" -ForegroundColor Green
 Get-ChildItem -Path $dist

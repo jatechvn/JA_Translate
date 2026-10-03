@@ -2,6 +2,36 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.4] - 2026-10-03
+
+### 🔄 Khắc Phục Cơ Chế Cập Nhật LAN OTA & Tự Động Hóa Manifest
+- **Khắc phục Nghẽn Kiểm Tra Bản Mới (`ota_update_service.dart`):**
+  - Cải tiến thuật toán phát hiện gói: Luôn kiểm tra song song `version.json` VÀ quét toàn bộ danh sách gói nén `.zip` trong thư mục máy chủ.
+  - So sánh và tự động chọn gói có phiên bản cao nhất giữa chúng (`latestZipPkg.version > jsonPkg.version ? latestZipPkg : jsonPkg`), triệt tiêu 100% tình huống file `version.json` cũ vô tình chặn client cập nhật lên bản zip mới hơn.
+- **Tự Động Hóa Sinh Manifest `version.json` (`package_dist.ps1`):**
+  - Tự động trích xuất release notes, sinh file `version.json` đồng bộ trực tiếp vào `dist/` và gói ứng dụng sẵn sàng phục vụ client LAN OTA.
+- **Cập Nhật Ngay Metadata Server LAN:**
+  - Đồng bộ lại `version.json` trên máy chủ `\\10.81.141.226\temp\FBT\JA_PROJECT\JA_Update\JA_Translate`.
+
+### 🛡️ Tối Ưu Quy Trình Thoát Sạch & Quản Lý Cửa Sổ (Clean Process Termination)
+- **Quy Trình Thoát Sạch Toàn Diện (`DesktopService.quitApplication`):**
+  - Tự động ngắt sạch tiến trình nền `llama-server.exe` thông qua `taskkill`, giải phóng handle cửa sổ native và cưỡng chế `exit(0)`.
+  - Triệt tiêu hoàn toàn lỗi ứng dụng đã đóng cửa sổ nhưng tiến trình `ja_translate.exe` vẫn tồn tại chạy ngầm trong Windows Task Manager.
+- **Tùy Chọn Khay Hệ Thống Linh Hoạt (`minimize_to_tray_on_close`):**
+  - Mặc định khi bấm nút `X`: Ứng dụng thoát sạch 100% và biến mất khỏi Task Manager.
+  - Bổ sung tùy chọn switch toggle trong Cài đặt Chung: Cho phép người dùng chủ động chọn thu nhỏ xuống khay Taskbar nếu muốn duy trì phím tắt `Alt+Q` (Mở nhanh) và `Alt+S` (Chụp màn hình dịch).
+  - Bản địa hóa đầy đủ 3 ngôn ngữ (VI / ENG / CN) cho tính năng mới.
+
+### 🧪 Kiểm Thử Tự Động Toàn Diện
+- Bổ sung test hồi quy `test/ota_update_service_test.dart` kiểm chứng khả năng vượt qua file `version.json` cũ khi có bản zip mới.
+- Toàn bộ **46/46 unit & widget tests** passed 100%, Flutter analyze `No issues found!`.
+
+### 📦 Phát hành
+- Đồng bộ version 1.2.4+7 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói bản phát hành Windows x64 mới nhất vào thư mục `dist/` kèm file nén `JA_Translate_v1.2.4_Windows_x64.zip`, `version.json` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.2.3] - 2026-10-03
 
 ### 🪟 Chuẩn Hóa Tiêu Đề Cửa Sổ & Metadata Windows Native (App Name Alignment)

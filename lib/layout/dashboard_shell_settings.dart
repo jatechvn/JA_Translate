@@ -270,6 +270,7 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
   late bool _realtimeTranslate;
   late bool _showPinyin;
   late bool _vietnameseFontOpt;
+  late bool _minimizeToTray;
   late String _defaultTargetLang;
 
   @override
@@ -285,6 +286,12 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
           'SETTINGS',
           'vietnamese_font_optimization',
           defaultValue: 'true',
+        ) ==
+        'true';
+    _minimizeToTray = AppConfig.get(
+          'SETTINGS',
+          'minimize_to_tray_on_close',
+          defaultValue: 'false',
         ) ==
         'true';
     _defaultTargetLang = AppConfig.get(
@@ -305,6 +312,11 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
       'SETTINGS',
       'vietnamese_font_optimization',
       _vietnameseFontOpt.toString(),
+    );
+    AppConfig.set(
+      'SETTINGS',
+      'minimize_to_tray_on_close',
+      _minimizeToTray.toString(),
     );
     AppConfig.set('SETTINGS', 'default_target_lang', _defaultTargetLang);
     AppConfig.save();
@@ -552,6 +564,16 @@ class _SettingsGeneralTabState extends State<_SettingsGeneralTab> {
                   value: _vietnameseFontOpt,
                   onChanged: (v) {
                     setState(() => _vietnameseFontOpt = v);
+                    _saveSettings();
+                  },
+                ),
+                const SizedBox(height: 14),
+                _buildSwitchTile(
+                  title: lang.t('minimize_to_tray_title'),
+                  subtitle: lang.t('minimize_to_tray_sub'),
+                  value: _minimizeToTray,
+                  onChanged: (v) {
+                    setState(() => _minimizeToTray = v);
                     _saveSettings();
                   },
                 ),

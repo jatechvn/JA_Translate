@@ -494,6 +494,7 @@ class OtaUpdateService {
     }
 
     // 2. Kiểm tra file version.json trước nếu có
+    UpdatePackageInfo? jsonPkg;
     final versionJsonFile = File(
       '${dir.path}${Platform.pathSeparator}version.json',
     );
@@ -513,26 +514,13 @@ class OtaUpdateService {
             isValidPackageName(fileName)) {
           final zipFile = File('${dir.path}${Platform.pathSeparator}$fileName');
           if (await zipFile.exists()) {
-            final hasUpdate = serverSemVer > currentSemVer;
-            final pkg = UpdatePackageInfo(
+            jsonPkg = UpdatePackageInfo(
               version: serverSemVer,
               fileName: fileName,
               fullPath: zipFile.path,
               fileSize: await zipFile.length(),
               releaseNotes: notes,
               releaseDate: dateStr != null ? DateTime.tryParse(dateStr) : null,
-            );
-            if (hasUpdate) {
-              await saveConfig(
-                updatedConfig.copyWith(
-                  cachedUpdateVersion: serverSemVer.toString(),
-                ),
-              );
-            }
-            return UpdateCheckResult(
-              hasUpdate: hasUpdate,
-              packageInfo: pkg,
-              currentVersion: currentVerStr,
             );
           }
         }
@@ -542,6 +530,7 @@ class OtaUpdateService {
     }
 
     // 3. Tự động quét các file .zip trong thư mục máy chủ
+    UpdatePackageInfo? latestZipPkg;
     try {
       final List<FileSystemEntity> entries =
           await dir.list(followLinks: false).toList();
@@ -582,40 +571,51 @@ class OtaUpdateService {
         }
       }
 
-      if (candidates.isEmpty) {
-        return UpdateCheckResult(
-          hasUpdate: false,
-          currentVersion: currentVerStr,
-          errorMessage: 'Không tìm thấy gói cập nhật .zip nào trên máy chủ',
-        );
+      if (candidates.isNotEmpty) {
+        // Sắp xếp giảm dần, lấy phiên bản cao nhất
+        candidates.sort((a, b) => b.version.compareTo(a.version));
+        latestZipPkg = candidates.first;
       }
-
-      // Sắp xếp giảm dần, lấy phiên bản cao nhất
-      candidates.sort((a, b) => b.version.compareTo(a.version));
-      final latestPkg = candidates.first;
-      final hasUpdate = latestPkg.version > currentSemVer;
-
-      if (hasUpdate) {
-        await saveConfig(
-          updatedConfig.copyWith(
-            cachedUpdateVersion: latestPkg.version.toString(),
-          ),
-        );
-      }
-
-      return UpdateCheckResult(
-        hasUpdate: hasUpdate,
-        packageInfo: latestPkg,
-        currentVersion: currentVerStr,
-      );
     } catch (e) {
+      debugPrint('[OtaUpdateService] Scan zip error: $e');
+    }
+
+    // 4. Chọn gói phiên bản cao nhất (không bao giờ để version.json cũ chặn các gói zip mới hơn)
+    UpdatePackageInfo? bestPkg;
+    if (jsonPkg != null && latestZipPkg != null) {
+      if (latestZipPkg.version > jsonPkg.version) {
+        // Gói zip trên máy chủ mới hơn version.json (do deploy gói zip mới nhưng chưa kịp update version.json)
+        bestPkg = latestZipPkg;
+      } else {
+        // version.json mới hơn hoặc bằng -> ưu tiên dùng jsonPkg vì có releaseNotes và releaseDate
+        bestPkg = jsonPkg;
+      }
+    } else {
+      bestPkg = jsonPkg ?? latestZipPkg;
+    }
+
+    if (bestPkg == null) {
       return UpdateCheckResult(
         hasUpdate: false,
         currentVersion: currentVerStr,
-        isConnectionSuccess: false,
-        errorMessage: 'Lỗi khi quét tệp trên máy chủ: $e',
+        errorMessage: 'Không tìm thấy gói cập nhật nào trên máy chủ',
       );
     }
+
+    final hasUpdate = bestPkg.version > currentSemVer;
+    if (hasUpdate) {
+      await saveConfig(
+        updatedConfig.copyWith(
+          cachedUpdateVersion: bestPkg.version.toString(),
+        ),
+      );
+    }
+
+    return UpdateCheckResult(
+      hasUpdate: hasUpdate,
+      packageInfo: bestPkg,
+      currentVersion: currentVerStr,
+    );
   }
 
   /// Thực hiện tải gói cập nhật, giải nén và kích hoạt script cập nhật

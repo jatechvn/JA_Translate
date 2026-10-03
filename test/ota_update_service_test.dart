@@ -311,5 +311,42 @@ void main() {
       expect(result.isConnectionSuccess, isTrue);
       expect(result.hasUpdate, isFalse);
     });
+
+    test(
+        'detects newer version from zip files even when version.json has older version',
+        () async {
+      // Simulate version.json being stale at 1.2.1
+      final v121Zip =
+          File('${tempServerDir.path}/JA_Translate_v1.2.1_Windows_x64.zip');
+      await v121Zip.writeAsString('v121 zip');
+      final versionJson = File('${tempServerDir.path}/version.json');
+      await versionJson.writeAsString('''
+{
+  "version": "1.2.1",
+  "fileName": "JA_Translate_v1.2.1_Windows_x64.zip",
+  "releaseNotes": "Stale 1.2.1 release notes",
+  "releaseDate": "2026-10-02T10:00:00.000Z"
+}
+''');
+
+      // But a newer v1.2.3 zip is uploaded
+      final v123Zip =
+          File('${tempServerDir.path}/JA_Translate_v1.2.3_Windows_x64.zip');
+      await v123Zip.writeAsString('v123 zip');
+
+      final service = OtaUpdateService();
+      final result = await service.checkForUpdates(
+        overrideServerPath: tempServerDir.path,
+        overrideCurrentVersion: '1.2.1',
+        isManual: true,
+      );
+
+      expect(result.isConnectionSuccess, isTrue);
+      expect(result.hasUpdate, isTrue);
+      expect(result.packageInfo, isNotNull);
+      expect(result.packageInfo!.version.toString(), equals('1.2.3'));
+      expect(result.packageInfo!.fileName,
+          equals('JA_Translate_v1.2.3_Windows_x64.zip'));
+    });
   });
 }

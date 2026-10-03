@@ -10,6 +10,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:path_provider/path_provider.dart';
+import 'app_config.dart';
 import 'llama_service.dart';
 import 'power_coordinator.dart';
 
@@ -221,8 +222,19 @@ if (\$img -ne \$null) {
     trayManager.popUpContextMenu();
   }
 
+  /// Cleanly terminate the application, ensuring child services and native processes exit
+  static Future<void> quitApplication() async {
+    try {
+      await LlamaService().stopServer();
+    } catch (_) {}
+    try {
+      await windowManager.destroy();
+    } catch (_) {}
+    exit(0);
+  }
+
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
+  void onTrayMenuItemClick(MenuItem menuItem) async {
     switch (menuItem.key) {
       case 'show_window':
         bringToFront();
@@ -232,17 +244,22 @@ if (\$img -ne \$null) {
         onScreenSnipHotkey?.call();
         break;
       case 'exit_app':
-        LlamaService().stopServer();
-        windowManager.destroy();
+        await quitApplication();
         break;
     }
   }
 
   @override
   void onWindowClose() async {
-    final isPreventClose = await windowManager.isPreventClose();
-    if (isPreventClose) {
-      // Immediately tell coordinator that window is hidden
+    final minimizeToTray = AppConfig.get(
+          'SETTINGS',
+          'minimize_to_tray_on_close',
+          defaultValue: 'false',
+        ) ==
+        'true';
+
+    if (minimizeToTray) {
+      // User opted to keep app running in tray for hotkeys Alt+Q / Alt+S
       PowerCoordinator.instance.setWindowVisibility(false);
       try {
         await windowManager.hide();
@@ -253,6 +270,9 @@ if (\$img -ne \$null) {
           PowerCoordinator.instance.setWindowVisibility(isVis);
         } catch (_) {}
       }
+    } else {
+      // Clean, complete shutdown — leaves no lingering tasks in Task Manager
+      await quitApplication();
     }
   }
 
