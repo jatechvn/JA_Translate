@@ -15,7 +15,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 /// and event listeners, and ensures the window is explicitly shown and focused
 /// without resetting the native C++ DWM glass composition.
 Future<void> initGlassWindow({
-  String title = 'JA Application',
+  String title = 'JA Translate',
   Size size = const Size(1200, 820),
   Size minSize = const Size(760, 520),
   bool center = true,
@@ -45,6 +45,7 @@ Future<void> initGlassWindow({
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setTitle(title);
       await windowManager.show();
       await windowManager.focus();
     });

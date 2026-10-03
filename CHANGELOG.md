@@ -2,6 +2,23 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.3] - 2026-10-03
+
+### 🪟 Chuẩn Hóa Tiêu Đề Cửa Sổ & Metadata Windows Native (App Name Alignment)
+- **Chuẩn hóa Tiêu đề Cửa sổ Native Win32:**
+  - Khởi tạo cửa sổ trong `windows/runner/main.cpp` với tiêu đề chính xác `L"JA Translate"` thay vì chuỗi tên tệp nhị phân `L"ja_translate"`.
+  - Cập nhật `lib/main.dart` và `lib/modules/window_helper.dart` luôn thiết lập tiêu đề cửa sổ đầy đủ `JA Translate  v1.2.3` trên tất cả các phiên bản Windows (Windows 10 & Windows 11), triệt tiêu hoàn toàn hiện tượng thanh tác vụ Windows (Taskbar) hiển thị tên tệp exe `ja_translate`.
+- **Đồng bộ Thông tin Định danh PE Metadata (`Runner.rc`):**
+  - Cập nhật `FileDescription` từ `ja_translate` thành `JA Translate`: Windows Task Manager hiển thị rõ ràng tên ứng dụng "JA Translate" trong danh sách tiến trình (Processes / Details tab).
+  - Cập nhật `ProductName` và `InternalName` thành `JA Translate`: Thông tin chi tiết thuộc tính tệp (File Properties Details) và cửa sổ chuyển đổi `Alt + Tab` hiển thị đồng bộ tên thương hiệu.
+  - Cập nhật `CompanyName` và `LegalCopyright` thành `JA-Tech System`.
+
+### 📦 Phát hành
+- Đồng bộ version 1.2.3+6 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói bản phát hành Windows x64 mới nhất vào thư mục `dist/` kèm file nén `JA_Translate_v1.2.3_Windows_x64.zip` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.2.2] - 2026-10-03
 
 ### ⚡ Tối Ưu Hóa Năng Lượng & Giảm Tải GPU/CPU (Flutter Desktop Power Optimizer)

@@ -1,6 +1,6 @@
 # JA Translate
 
-[![Version](https://img.shields.io/badge/version-1.2.2-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
+[![Version](https://img.shields.io/badge/version-1.2.3-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
 [![Flutter](https://img.shields.io/badge/flutter-3.x-teal.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg)](https://github.com/jatechvn/JA_Translate)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](ABOUT.txt)
@@ -26,21 +26,20 @@
 
 ## 🚀 Cài đặt nhanh
 
-1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.2_Windows_x64.zip`.
+1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.3_Windows_x64.zip`.
 2. Giải nén file `.zip` vào thư mục bất kỳ.
 3. Chạy file `ja_translate.exe` để bắt đầu sử dụng.
 
 ---
 
-## 📝 Thay đổi gần đây (v1.2.2)
+## 📝 Thay đổi gần đây (v1.2.3)
 
-- **Tối Ưu Hóa Năng Lượng & Giảm Tải GPU/CPU (Flutter Desktop Power Optimizer):**
-  - Tích hợp bộ điều phối `PowerCoordinator` quản lý tập trung trạng thái hiển thị, focus, thu nhỏ và nhàn rỗi (timeout 12s).
-  - Cổng `TickerMode` toàn cục tại `MaterialApp.builder` ngắt hoàn toàn hoạt ảnh và nhịp render GPU khi ứng dụng ẩn/mất focus.
-  - Tạm dừng chuyển động Gaussian Blur 85px của `MeshOrb` khi nhàn rỗi, đưa GPU Engine về ~0.0% mà UI vẫn phản hồi tức thì khi di chuột.
-  - Đồng bộ chuẩn xác các sự kiện `WindowListener` và bảo toàn 100% tác vụ nghiệp vụ nền (Dịch thuật, phím tắt, OTA).
-- **Session Epoch & Tối ưu polling:** Thêm epoch guard cho `AsymmetricMarqueeText` và bỏ qua thăm dò `_aiStatusTimer` khi không active.
-- **Kiểm thử tự động chuyên sâu:** Bổ sung `test/power_coordinator_test.dart`, nâng tổng số ca kiểm thử tự động lên **45/45 tests passed 100%**.
+- **Chuẩn hóa Tiêu đề Cửa sổ & Windows Metadata (App Name Alignment):**
+  - Khởi tạo cửa sổ trong `windows/runner/main.cpp` với tiêu đề `JA Translate` thay vì tên file exe `ja_translate`.
+  - Cập nhật PE Metadata (`Runner.rc`): `FileDescription` và `ProductName` đổi thành `JA Translate`, giúp Windows Task Manager và Alt+Tab hiển thị đúng tên app thương hiệu.
+  - Cố định tiêu đề cửa sổ `JA Translate  v1.2.3` trên mọi phiên bản Windows.
+- **Tối ưu hóa năng lượng tự động:** Triệt tiêu nhịp vẽ GPU khi ẩn/nhàn rỗi (Power Optimizer).
+- **Kiểm thử tự động toàn diện:** 45/45 tests passed 100%.
 
 ---
 

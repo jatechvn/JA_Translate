@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -83,9 +81,7 @@ class _AppContent extends StatelessWidget {
     final theme = context.watch<ThemeProvider>();
     final power = context.watch<PowerCoordinator>();
     final colors = theme.colors;
-    final effectiveTitle = (!kIsWeb && Platform.isWindows && !theme.isWin11)
-        ? ''
-        : '$appName  v$appVersion';
+    final effectiveTitle = '$appName  v$appVersion';
 
     return MaterialApp(
       title: effectiveTitle,
