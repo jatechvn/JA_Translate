@@ -60,6 +60,7 @@ void main() {
       // Text Translation
       'text_mic_permission_needed',
       'text_attach_image',
+      'toast_image_pasted',
       'text_image_n',
       'text_char_count',
       'text_swap_languages',

@@ -1270,6 +1270,11 @@ class LanguageProvider extends ChangeNotifier {
       'ENG': 'Attach Image',
       'CN': '附加图片',
     },
+    'toast_image_pasted': {
+      'VI': 'Đã dán ảnh từ bộ nhớ tạm',
+      'ENG': 'Pasted image from clipboard',
+      'CN': '已从剪贴板粘贴图片',
+    },
     'text_image_n': {
       'VI': 'Ảnh %d',
       'ENG': 'Image %d',

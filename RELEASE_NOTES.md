@@ -1,17 +1,20 @@
-TAG=v1.2.4
-TITLE=JA Translate v1.2.4 — Khắc Phục Cập Nhật LAN OTA & Tối Ưu Quy Trình Thoát Sạch Ứng Dụng
+TAG=v1.2.5
+TITLE=JA Translate v1.2.5 — Sao Chép Tiếng Trung Sạch Pinyin & Dán Ảnh Trực Tiếp Từ Clipboard
 BODY=
-## JA Translate v1.2.4 — Khắc Phục Cập Nhật LAN OTA & Tối Ưu Quy Trình Thoát Sạch Ứng Dụng
+## JA Translate v1.2.5 — Sao Chép Tiếng Trung Sạch Pinyin & Dán Ảnh Trực Tiếp Từ Clipboard
 
-- **Khắc phục Nghẽn Kiểm Tra Bản Mới OTA (`ota_update_service.dart`):**
-  - Quét thông minh song song `version.json` và toàn bộ các gói zip trên máy chủ, tự động chọn phiên bản cao nhất giữa chúng. Không bao giờ bị nghẽn bởi file `version.json` cũ trên máy chủ nữa.
-- **Tự Động Hóa Sinh Manifest `version.json` (`package_dist.ps1`):**
-  - Tự động tạo và cập nhật file `version.json` mỗi khi đóng gói và đồng bộ lên máy chủ LAN.
-- **Tối Ưu Quy Trình Thoát Sạch & Quản Lý Cửa Sổ (Clean Process Termination):**
-  - Tự động giải phóng `llama-server.exe` và thoát toàn diện với `exit(0)`. Triệt tiêu hoàn toàn tình trạng tiến trình vẫn chạy ngầm trong Windows Task Manager sau khi đóng cửa sổ.
-  - Bổ sung tùy chọn Cài đặt: Cho phép người dùng linh hoạt bật *"Thu nhỏ vào khay hệ thống khi đóng"* nếu muốn duy trì phím tắt `Alt+Q` (Mở nhanh) và `Alt+S` (Chụp màn hình dịch). Mặc định là thoát hẳn ứng dụng khi bấm nút X.
-- **Kiểm thử tự động toàn diện:** 46/46 tests passed 100%, static analysis không lỗi (`No issues found!`).
+- **Sao Chép Chữ Hán Thuần Túy Không Kèm Pinyin:**
+  - Nút Copy ở thẻ Kết quả (Output) tự động loại bỏ phần chú thích phiên âm (`\n\nPinyin:\n...`), chỉ sao chép chữ Hán gốc sang clipboard.
+  - Bổ sung nút Copy chuyên dụng trên thanh công cụ của thẻ Nhập liệu (Input), hỗ trợ sao chép nhanh văn bản nguồn và lọc sạch Pinyin.
+  - Đồng bộ bộ lọc Pinyin sang màn hình Lịch sử dịch thuật và Cửa sổ chính.
+- **Dán Ảnh Trực Tiếp Từ Clipboard (`Ctrl + V` & Nút Paste):**
+  - Hỗ trợ dán ảnh bằng phím tắt `Ctrl + V` trực tiếp ngay trong ô văn bản nhập liệu hoặc ngoài cửa sổ: tự động nhận diện ảnh chụp màn hình (`Win + Shift + S`, PrtScn), ảnh copy từ trình duyệt web hoặc tệp ảnh copy từ Windows Explorer (`CF_HDROP`).
+  - Tự động gắn ảnh vào danh sách đính kèm (`_attachedImages`), hiển thị thông báo Toast nổi và tự động kích hoạt tiến trình OCR/Vision.
+  - Nâng cấp nút Dán (Paste) trên thanh công cụ Input: ưu tiên dán ảnh từ clipboard trước khi đọc văn bản thông thường.
+  - Bản địa hóa thông báo `toast_image_pasted` cho cả 3 ngôn ngữ: VI, ENG, CN.
+- **Kiểm Thử Toàn Diện:**
+  - Bổ sung `test/chinese_clean_copy_test.dart` (6 bài test kiểm chứng cắt lọc Pinyin).
+  - Toàn bộ **53/53 bài kiểm thử** tự động đều vượt qua 100%, `flutter analyze` 0 warnings.
 
 ### Cài đặt
-Giải nén toàn bộ `JA_Translate_v1.2.4_Windows_x64.zip` và chạy `ja_translate.exe`. Xem `USERGUIDE.md` trong gói để biết thêm chi tiết.
-
+Giải nén toàn bộ `JA_Translate_v1.2.5_Windows_x64.zip` và chạy `ja_translate.exe`. Xem `USERGUIDE.md` trong gói để biết thêm chi tiết.

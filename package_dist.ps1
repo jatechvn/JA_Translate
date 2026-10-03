@@ -88,7 +88,7 @@ $versionJsonPath = Join-Path $dist "version.json"
 $releaseNotesText = "JA Translate v${version}"
 $releaseNotesPath = Join-Path $root "RELEASE_NOTES.md"
 if (Test-Path $releaseNotesPath) {
-    $rnContent = Get-Content $releaseNotesPath -Raw
+    $rnContent = [System.IO.File]::ReadAllText($releaseNotesPath, [System.Text.Encoding]::UTF8)
     if ($rnContent -match '(?m)^TITLE=(.+)$') {
         $releaseNotesText = $matches[1].Trim()
     }

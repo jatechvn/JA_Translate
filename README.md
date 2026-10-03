@@ -1,6 +1,6 @@
 # JA Translate
 
-[![Version](https://img.shields.io/badge/version-1.2.4-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
+[![Version](https://img.shields.io/badge/version-1.2.5-blue.svg)](https://github.com/jatechvn/JA_Translate/releases)
 [![Flutter](https://img.shields.io/badge/flutter-3.x-teal.svg)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/platform-Windows%20x64-lightgrey.svg)](https://github.com/jatechvn/JA_Translate)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](ABOUT.txt)
@@ -19,28 +19,30 @@
 - 🔒 **Bảo toàn trạng thái Tab (Tab State Preservation):** Giữ nguyên văn bản, dữ liệu dịch và con trỏ khi chuyển qua lại giữa các màn hình nhờ kiến trúc `IndexedStack`.
 - 📥 **Tự động tải Model trực tiếp:** Hộp thoại tải mô hình GGUF trực tiếp vào thư mục app với tiến trình % thời gian thực.
 - 📸 **Screen Snip & Vision OCR:** Chụp màn hình nhanh bằng phím tắt Windows `Win + Shift + S` và nhận diện chữ tự động bằng Tesseract OCR kết hợp Vision AI.
-- 🀄 **Phiên âm Pinyin thông minh:** Chuyển đổi chữ Hán sang Pinyin chuẩn kèm thanh điệu phục vụ học tập và dịch thuật chuyên sâu.
+- 📋 **Sao chép Tiếng Trung thuần túy:** Tự động loại bỏ phần phiên âm Pinyin khi sao chép chữ Hán ở thẻ Input, Output hoặc Lịch sử.
+- 🖼️ **Dán ảnh trực tiếp từ Clipboard:** Hỗ trợ phím tắt `Ctrl + V` và nút Paste dán thẳng ảnh chụp màn hình, ảnh từ trình duyệt hoặc tệp ảnh từ Explorer để dịch Vision ngay.
 - 🚀 **Portable & Sạch sẽ:** Không cần cài đặt rườm rà, giải nén và chạy ngay lập tức.
 
 ---
 
 ## 🚀 Cài đặt nhanh
 
-1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.4_Windows_x64.zip`.
+1. Tải bản phát hành mới nhất từ thư mục `dist/` hoặc [Releases](https://github.com/jatechvn/JA_Translate/releases): `JA_Translate_v1.2.5_Windows_x64.zip`.
 2. Giải nén file `.zip` vào thư mục bất kỳ.
 3. Chạy file `ja_translate.exe` để bắt đầu sử dụng.
 
 ---
 
-## 📝 Thay đổi gần đây (v1.2.4)
+## 📝 Thay đổi gần đây (v1.2.5)
 
-- **Khắc phục Cơ chế Cập nhật LAN OTA & Tự động hóa Manifest:**
-  - `OtaUpdateService` quét thông minh song song `version.json` và các gói zip, luôn chọn phiên bản cao nhất, không bị nghẽn bởi file json cũ.
-  - Tự động sinh `version.json` trong `dist/` khi đóng gói phát hành.
-- **Tối ưu Quy trình Thoát Sạch & Quản lý Cửa sổ (Clean Termination):**
-  - Tự động dọn sạch `llama-server.exe` và thoát toàn diện với `exit(0)`, triệt tiêu hoàn toàn tiến trình treo trong Task Manager khi đóng ứng dụng.
-  - Bổ sung tùy chọn Cài đặt: Cho phép người dùng linh hoạt chọn *"Thu nhỏ vào khay hệ thống khi đóng"* (mặc định tắt: bấm [X] thoát sạch).
-- **Kiểm thử tự động toàn diện:** 46/46 tests passed 100%.
+- **Sao Chép Tiếng Trung Sạch Pinyin (Clean Chinese Copy):**
+  - Nút Copy ở thẻ Kết quả (Output) và Lịch sử dịch tự động tách bỏ phần chú thích phiên âm (`\n\nPinyin:\n...`), chỉ sao chép chữ Hán thuần túy.
+  - Bổ sung nút Copy chuyên dụng trên thanh công cụ của thẻ Nhập liệu (Input), hỗ trợ sao chép nhanh văn bản nguồn và lọc sạch Pinyin.
+- **Hỗ Trợ Dán Ảnh Trực Tiếp Từ Clipboard (`Ctrl + V` & Nút Paste):**
+  - Tích hợp nhận diện ảnh từ Clipboard khi bấm `Ctrl + V` (trong `TextField` hoặc ngoài cửa sổ) và nút Dán trên thanh công cụ. Hỗ trợ ảnh chụp màn hình, ảnh từ web và file ảnh từ Explorer (`CF_HDROP`).
+  - Tự động gắn ảnh vào danh sách đính kèm và kích hoạt tiến trình OCR/Vision dịch ngay.
+  - Bổ sung thông báo Toast nổi `toast_image_pasted` đa ngôn ngữ (VI / ENG / CN).
+- **Kiểm thử tự động toàn diện:** 53/53 tests passed 100%, Flutter analyze `No issues found!`.
 
 ---
 

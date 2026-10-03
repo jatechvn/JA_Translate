@@ -9,6 +9,7 @@ import '../widgets/glass_widgets.dart';
 import '../widgets/glass_dialog.dart';
 import '../widgets/app_toast.dart';
 import '../modules/translation_history.dart';
+import '../modules/logic.dart';
 
 class TranslationHistoryView extends StatefulWidget {
   final void Function(String text, String src, String tgt)? onRestoreText;
@@ -313,7 +314,9 @@ class _TranslationHistoryViewState extends State<TranslationHistoryView>
                       icon: const Icon(Icons.copy_rounded, size: 16),
                       color: colors.textSecondary,
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: item.translated));
+                        final cleanText = TranslateLogic.cleanChineseForCopy(
+                            item.translated);
+                        Clipboard.setData(ClipboardData(text: cleanText));
                         showAppToast(
                           context,
                           message: lang.t('toast_copied'),

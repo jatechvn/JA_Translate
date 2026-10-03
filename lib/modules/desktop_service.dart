@@ -156,15 +156,16 @@ class DesktopService with TrayListener, WindowListener {
     }
   }
 
-  static bool _hasClipboardImage() {
+  static bool hasClipboardImage() {
     if (!Platform.isWindows || _isClipboardFormatAvailable == null) {
       return false;
     }
     try {
-      // CF_BITMAP = 2, CF_DIB = 8, CF_DIBV5 = 17
+      // CF_BITMAP = 2, CF_DIB = 8, CF_DIBV5 = 17, CF_HDROP = 15
       return _isClipboardFormatAvailable!(8) != 0 ||
           _isClipboardFormatAvailable!(2) != 0 ||
-          _isClipboardFormatAvailable!(17) != 0;
+          _isClipboardFormatAvailable!(17) != 0 ||
+          _isClipboardFormatAvailable!(15) != 0;
     } catch (_) {
       return false;
     }
@@ -175,11 +176,26 @@ class DesktopService with TrayListener, WindowListener {
       final script = '''
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
-\$img = [System.Windows.Forms.Clipboard]::GetImage()
-if (\$img -ne \$null) {
-  \$img.Save('$targetPath', [System.Drawing.Imaging.ImageFormat]::Png)
-  \$img.Dispose()
-  Write-Output "OK"
+if ([System.Windows.Forms.Clipboard]::ContainsImage()) {
+  \$img = [System.Windows.Forms.Clipboard]::GetImage()
+  if (\$img -ne \$null) {
+    \$img.Save('$targetPath', [System.Drawing.Imaging.ImageFormat]::Png)
+    \$img.Dispose()
+    Write-Output "OK"
+    exit 0
+  }
+}
+if ([System.Windows.Forms.Clipboard]::ContainsFileDropList()) {
+  \$files = [System.Windows.Forms.Clipboard]::GetFileDropList()
+  if (\$files.Count -gt 0) {
+    \$firstFile = \$files[0]
+    \$ext = [System.IO.Path]::GetExtension(\$firstFile).ToLower()
+    if (\$ext -in @('.png', '.jpg', '.jpeg', '.bmp', '.webp', '.ico', '.tiff')) {
+      [System.IO.File]::Copy(\$firstFile, '$targetPath', \$true)
+      Write-Output "OK"
+      exit 0
+    }
+  }
 }
 ''';
       final res =
@@ -324,7 +340,7 @@ if (\$img -ne \$null) {
 
         final currentSeq = _getClipboardSeq();
         // If clipboard sequence changed and contains an image, grab it immediately!
-        if ((currentSeq != initialSeq || i > 15) && _hasClipboardImage()) {
+        if ((currentSeq != initialSeq || i > 15) && hasClipboardImage()) {
           final saved = await _saveClipboardImage(outputPng);
           if (saved && File(outputPng).existsSync()) {
             capturedPath = outputPng;
@@ -369,7 +385,7 @@ if (\$img -ne \$null) {
   /// Read an image from clipboard directly and save to a temporary file
   static Future<String?> getClipboardImage() async {
     if (!Platform.isWindows) return null;
-    if (!_hasClipboardImage()) return null;
+    if (!hasClipboardImage()) return null;
 
     try {
       final tempDir = await getTemporaryDirectory();

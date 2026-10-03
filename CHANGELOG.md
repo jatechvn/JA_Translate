@@ -2,6 +2,40 @@
 
 Tất cả các thay đổi quan trọng của dự án JA Translate sẽ được ghi lại trong tài liệu này.
 
+## [v1.2.5] - 2026-10-03
+
+### 📋 Sao Chép Tiếng Trung Sạch Pinyin (Clean Chinese Copy)
+- **Sao Chép Chữ Hán Thuần Túy Trên Thẻ Kết Quả (Output):**
+  - Tự động nhận diện và cắt bỏ khối chú thích phiên âm (`\n\nPinyin:\n...`) qua hàm thuần `TranslateLogic.cleanChineseForCopy()`.
+  - Khi bấm nút Copy ở thẻ Kết quả, clipboard chỉ lưu trữ chữ Hán / văn bản dịch gốc, không còn lẫn Pinyin.
+- **Bổ Sung Nút Copy Trên Thanh Công Cụ Nhập Liệu (Input):**
+  - Thêm nút Copy (`Icons.copy_rounded`) trên thanh công cụ thẻ Input giúp người dùng sao chép nhanh văn bản nguồn một chạm.
+  - Tự động làm sạch khối Pinyin nếu văn bản nguồn có chứa phiên âm.
+- **Đồng Bộ Bộ Lọc Toàn Diện:**
+  - Tích hợp bộ lọc làm sạch Pinyin vào màn hình Lịch sử dịch thuật (`translation_history_view.dart`) và cửa sổ chính (`main_window.dart`).
+
+### 🖼️ Hỗ Trợ Dán Ảnh Trực Tiếp Từ Clipboard (`Ctrl + V` & Nút Paste)
+- **Dán Ảnh Thông Minh Qua Phím Tắt `Ctrl + V`:**
+  - Tích hợp `FocusNode` bắt phím trên ô `TextField` nhập liệu: Tự động phát hiện dữ liệu hình ảnh trong Clipboard (ảnh chụp màn hình từ `Win + Shift + S`, `PrintScreen`, copy ảnh từ trình duyệt web, hoặc `Ctrl + C` tệp ảnh từ Windows Explorer `CF_HDROP`).
+  - Tự động chặn thao tác dán text rác vào ô văn bản, lưu tệp ảnh tạm, đính kèm vào danh sách ảnh (`_attachedImages`), hiển thị Toast thông báo nổi và tự động kích hoạt tiến trình OCR/Vision dịch ngay lập tức.
+  - Nếu clipboard là văn bản thuần túy, thao tác dán hoạt động bình thường mượt mà tại vị trí con trỏ.
+  - Xử lý phím tắt `Ctrl + V` ngay cả khi con trỏ chuột nằm ngoài ô văn bản.
+- **Nâng Cấp Nút Dán (Paste) Trên Thanh Công Cụ Input:**
+  - Ưu tiên kiểm tra định dạng hình ảnh từ Clipboard trước tiên. Nếu có ảnh $\rightarrow$ đính kèm và dịch; nếu là text $\rightarrow$ dán text.
+- **Đa Ngôn Ngữ:**
+  - Bổ sung thông báo Toast nổi `toast_image_pasted` chuẩn hóa 3 ngôn ngữ: VI ("Đã dán ảnh từ bộ nhớ tạm"), ENG ("Pasted image from clipboard"), CN ("已从剪贴板粘贴图片").
+
+### 🧪 Kiểm Thử Tự Động & Đối Soát Chất Lượng
+- Viết bộ kiểm thử chuyên biệt `test/chinese_clean_copy_test.dart` (6 bài test kiểm chứng việc lọc Pinyin và phát hiện Clipboard ảnh).
+- Cập nhật bộ kiểm thử từ điển `test/complete_localization_test.dart`.
+- Toàn bộ **53/53 bài kiểm thử** tự động đều vượt qua thành công, `flutter analyze` 0 warnings / 0 issues.
+
+### 📦 Phát Hành
+- Đồng bộ version 1.2.5+8 trong `pubspec.yaml`, `constants.dart`, `Runner.rc`, `ABOUT.txt`, `USERGUIDE.md`, `README.md`, `RELEASE_NOTES.md`.
+- Đóng gói bản phát hành Windows x64 mới nhất vào thư mục `dist/` kèm file nén `JA_Translate_v1.2.5_Windows_x64.zip`, `version.json` và mã băm `dist/SHA256SUMS.txt`.
+
+---
+
 ## [v1.2.4] - 2026-10-03
 
 ### 🔄 Khắc Phục Cơ Chế Cập Nhật LAN OTA & Tự Động Hóa Manifest

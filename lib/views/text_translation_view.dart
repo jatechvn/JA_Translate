@@ -32,6 +32,7 @@ class TextTranslationViewState extends State<TextTranslationView>
 
   final TextEditingController _inputController = TextEditingController();
   final TextEditingController _outputController = TextEditingController();
+  late final FocusNode _inputFocusNode;
 
   String _srcLang = 'auto';
   String _tgtLang = 'vi';
@@ -74,12 +75,26 @@ class TextTranslationViewState extends State<TextTranslationView>
     _srcLang = AppConfig.get('SETTINGS', 'source_lang', defaultValue: 'auto');
     _tgtLang = AppConfig.get('SETTINGS', 'target_lang', defaultValue: 'vi');
     _inputController.addListener(_onInputChanged);
+    _inputFocusNode = FocusNode(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.keyV &&
+            HardwareKeyboard.instance.isControlPressed) {
+          if (DesktopService.hasClipboardImage()) {
+            _tryPasteImageFromClipboard();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+    );
   }
 
   @override
   void dispose() {
     _debounceTimer?.cancel();
     _inputController.removeListener(_onInputChanged);
+    _inputFocusNode.dispose();
     _inputController.dispose();
     _outputController.dispose();
     super.dispose();
@@ -398,6 +413,31 @@ class TextTranslationViewState extends State<TextTranslationView>
     }
   }
 
+  Future<bool> _tryPasteImageFromClipboard() async {
+    if (!DesktopService.hasClipboardImage()) return false;
+    setState(() => _statusText = 'READING CLIPBOARD IMAGE...');
+    final imagePath = await DesktopService.getClipboardImage();
+    if (imagePath != null && mounted) {
+      setState(() {
+        _attachedImages.add(imagePath);
+        _statusText = 'ATTACHED CLIPBOARD IMAGE';
+      });
+      final lang = context.read<LanguageProvider>();
+      final colors = context.read<ThemeProvider>().colors;
+      showAppToast(
+        context,
+        message: lang.t('toast_image_pasted'),
+        icon: Icons.image_rounded,
+        accentColor: colors.accentCyan,
+      );
+      _startTranslation();
+      return true;
+    } else if (mounted) {
+      setState(() => _statusText = 'READY');
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -417,11 +457,27 @@ class TextTranslationViewState extends State<TextTranslationView>
 
     return Focus(
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.enter &&
-            HardwareKeyboard.instance.isControlPressed) {
-          _startTranslation();
-          return KeyEventResult.handled;
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter &&
+              HardwareKeyboard.instance.isControlPressed) {
+            _startTranslation();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.keyV &&
+              HardwareKeyboard.instance.isControlPressed) {
+            if (DesktopService.hasClipboardImage()) {
+              _tryPasteImageFromClipboard();
+              return KeyEventResult.handled;
+            } else if (!_inputFocusNode.hasFocus) {
+              Clipboard.getData('text/plain').then((data) {
+                if (data?.text != null && data!.text!.isNotEmpty && mounted) {
+                  _inputController.text = data.text!;
+                  _startTranslation();
+                }
+              });
+              return KeyEventResult.handled;
+            }
+          }
         }
         return KeyEventResult.ignored;
       },
@@ -501,12 +557,39 @@ class TextTranslationViewState extends State<TextTranslationView>
                                   color: colors.textSecondary,
                                   tooltip: lang.t('btn_paste'),
                                   onTap: () async {
+                                    if (DesktopService.hasClipboardImage()) {
+                                      final pasted =
+                                          await _tryPasteImageFromClipboard();
+                                      if (pasted) return;
+                                    }
                                     final data =
                                         await Clipboard.getData('text/plain');
                                     if (data?.text != null &&
                                         data!.text!.isNotEmpty) {
                                       _inputController.text = data.text!;
                                       _startTranslation();
+                                    }
+                                  },
+                                ),
+                                const SizedBox(width: 4),
+                                _buildIconButton(
+                                  icon: Icons.copy_rounded,
+                                  color: colors.textSecondary,
+                                  tooltip: lang.t('btn_copy'),
+                                  onTap: () {
+                                    if (_inputController.text.isNotEmpty) {
+                                      final cleanText =
+                                          TranslateLogic.cleanChineseForCopy(
+                                              _inputController.text);
+                                      Clipboard.setData(
+                                        ClipboardData(text: cleanText),
+                                      );
+                                      showAppToast(
+                                        context,
+                                        message: lang.t('toast_copied'),
+                                        icon: Icons.check_rounded,
+                                        accentColor: colors.accentEmerald,
+                                      );
                                     }
                                   },
                                 ),
@@ -563,6 +646,7 @@ class TextTranslationViewState extends State<TextTranslationView>
                         Expanded(
                           child: TextField(
                             controller: _inputController,
+                            focusNode: _inputFocusNode,
                             maxLines: null,
                             expands: true,
                             style: TextStyle(
@@ -718,9 +802,11 @@ class TextTranslationViewState extends State<TextTranslationView>
                                   tooltip: lang.t('btn_copy'),
                                   onTap: () {
                                     if (_outputController.text.isNotEmpty) {
+                                      final cleanText =
+                                          TranslateLogic.cleanChineseForCopy(
+                                              _outputController.text);
                                       Clipboard.setData(
-                                        ClipboardData(
-                                            text: _outputController.text),
+                                        ClipboardData(text: cleanText),
                                       );
                                       showAppToast(
                                         context,

@@ -2,7 +2,7 @@
                        PROJECT INFORMATION CARD
 ========================================================================
 Project Name : JA_Translate
-Version      : 1.2.4+7
+Version      : 1.2.5+8
 Tech Stack   : Flutter 3.x / Dart 3.x (Windows Desktop x64)
 Managed By   : JA Auto Git
 Website      : https://jatechvn.github.io/

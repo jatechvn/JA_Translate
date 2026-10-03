@@ -25,6 +25,16 @@ class TranslateLogic {
     }
   }
 
+  /// Cleans Pinyin phonetic annotations from Chinese text, returning pure Chinese text
+  static String cleanChineseForCopy(String text) {
+    if (text.isEmpty) return '';
+    final pinyinPattern = RegExp(r'\n*Pinyin:\s*', caseSensitive: false);
+    if (pinyinPattern.hasMatch(text)) {
+      return text.split(pinyinPattern)[0].trim();
+    }
+    return text;
+  }
+
   /// Routes streaming translation task to the ApiClient
   static Stream<String> translate({
     required String text,

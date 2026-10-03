@@ -371,9 +371,7 @@ class _MainWindowState extends State<MainWindow> {
 
   void _copyToClipboard(TextEditingController controller, String label) {
     var text = controller.text.trim();
-    if (text.contains('Pinyin:')) {
-      text = text.split('Pinyin:')[0].trim();
-    }
+    text = TranslateLogic.cleanChineseForCopy(text);
     if (text.isNotEmpty) {
       Clipboard.setData(ClipboardData(text: text));
       ScaffoldMessenger.of(context).showSnackBar(
