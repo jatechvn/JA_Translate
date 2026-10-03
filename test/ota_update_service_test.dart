@@ -193,7 +193,20 @@ void main() {
       // Verifies wait loop and start command
       expect(script, contains('tasklist /fi "PID eq %OLD_PID%"'));
       expect(script, contains('start "" "%DST_DIR%\\%EXE_NAME%"'));
+      expect(script, contains('del /f /q "%~dp0update.zip"'));
+      expect(script, contains('rmdir /s /q "%~dp0extracted"'));
+      expect(script, contains('rmdir /s /q "%~dp0backup"'));
       expect(script, contains(':rollback'));
+    });
+
+    test('cleanupOldTempUpdates removes old update folders in temp', () async {
+      final fakeOldDir = await Directory.systemTemp.createTemp('JA_Translate_Update_fake_old_');
+      final fakeOldFile = File('${fakeOldDir.path}/update.zip');
+      await fakeOldFile.writeAsString('dummy');
+
+      final count = await OtaUpdateService.cleanupOldTempUpdates(threshold: Duration.zero);
+      expect(count, greaterThanOrEqualTo(1));
+      expect(await fakeOldDir.exists(), isFalse);
     });
   });
 

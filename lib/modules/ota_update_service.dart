@@ -807,8 +807,13 @@ if errorlevel 8 goto rollback
 echo [3/3] Khoi chay ung dung moi...
 start "" "%DST_DIR%\\%EXE_NAME%"
 
-:: Cho 2s roi dong cua so
-timeout /t 2 /nobreak >nul
+:: Don dep rac file zip, extracted va backup trong thu muc tam de giai phong o dia
+if exist "%~dp0update.zip" del /f /q "%~dp0update.zip" >nul 2>&1
+if exist "%~dp0extracted" rmdir /s /q "%~dp0extracted" >nul 2>&1
+if exist "%~dp0backup" rmdir /s /q "%~dp0backup" >nul 2>&1
+
+:: Cho 2s roi tu dong xoa thu muc tam nay trong background va thoat
+start /b "" cmd /c "timeout /t 3 /nobreak >nul & rmdir /s /q ""%~dp0"" >nul 2>&1"
 exit /b 0
 
 :rollback
@@ -817,5 +822,36 @@ if errorlevel 8 exit /b 14
 start "" "%DST_DIR%\\%EXE_NAME%"
 exit /b 15
 ''';
+  }
+
+  /// Dọn dẹp an toàn các thư mục rác cập nhật cũ trong %TEMP% (nếu có từ các lần cập nhật trước)
+  static Future<int> cleanupOldTempUpdates({Duration threshold = const Duration(minutes: 3)}) async {
+    int cleanedCount = 0;
+    try {
+      final tempDir = Directory.systemTemp;
+      final entities = await tempDir.list(followLinks: false).toList();
+      final now = DateTime.now();
+      for (final entity in entities) {
+        if (entity is Directory) {
+          final dirName = entity.path.split(Platform.pathSeparator).last;
+          if (dirName.startsWith('JA_Translate_Update_')) {
+            try {
+              final stat = await entity.stat();
+              // Chỉ xóa các thư mục được tạo trước đó (tránh xóa nhầm update đang tải dở)
+              if (now.difference(stat.changed) >= threshold) {
+                await entity.delete(recursive: true);
+                cleanedCount++;
+                debugPrint('[OtaUpdateService] Cleaned up old temp update dir: $dirName');
+              }
+            } catch (e) {
+              debugPrint('[OtaUpdateService] Failed to clean $dirName: $e');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[OtaUpdateService] cleanupOldTempUpdates error: $e');
+    }
+    return cleanedCount;
   }
 }

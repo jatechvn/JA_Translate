@@ -123,6 +123,9 @@ class _DashboardShellState extends State<DashboardShell> {
 
   Future<void> _checkOtaOnStartup() async {
     try {
+      // Tự động dọn dẹp các thư mục rác cập nhật cũ trong %TEMP% (nếu có từ trước)
+      unawaited(OtaUpdateService.cleanupOldTempUpdates());
+
       final service = OtaUpdateService();
       final config = await service.loadConfig();
       if (!service.shouldCheckForUpdates(
